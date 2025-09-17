@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema } from "../validation/registerSchema";
-import axios from "axios";
+import api from "../lib/api";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -16,10 +16,14 @@ export default function Register() {
 
   async function onSubmit(data) {
     try {
-      const res = await axios.post("http://localhost:8000/user/register", data);
-      // server returns created user but no token; we'll still set demo token or use server token if available
-      const token = res.data?.token || "demo-token";
+      const res = await api.post("/user/register", data);
+      const token = res.data?.token;
+      const user = res.data?.user;
+      if (!token) throw new Error("No token returned from server");
       localStorage.setItem("token", token);
+      if (user) {
+        localStorage.setItem("role", user.role);
+      }
       navigate("/");
     } catch (err) {
       console.error(err);

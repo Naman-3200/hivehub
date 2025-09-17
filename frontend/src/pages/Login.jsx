@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema } from "../validation/loginSchema";
-import axios from "axios";
+import api from "../lib/api";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -16,10 +16,14 @@ export default function Login() {
 
   async function onSubmit(data) {
     try {
-      const res = await axios.post("http://localhost:8000/user/login", data);
+      const res = await api.post("/user/login", data);
       const token = res.data?.token;
+      const user = res.data?.user;
       if (token) {
         localStorage.setItem("token", token);
+        if (user) {
+          localStorage.setItem("role", user.role);
+        }
         navigate("/");
       }
     } catch (err) {
