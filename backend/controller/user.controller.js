@@ -1,4 +1,5 @@
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { User } from "../model/user.model.js";
 import { validationResult } from "express-validator";
 
@@ -26,12 +27,21 @@ const register = async (req, res) => {
 
     await userCreated.save();
 
+    const token = jwt.sign(
+      { id: userCreated._id, email: userCreated.email, role: userCreated.role },
+      process.env.JWT_SECRET || "dev-secret",
+      { expiresIn: "7d" }
+    );
+
     res.status(201).json({
       message: "User created successfully!",
       user: {
+        id: userCreated._id,
         name: userCreated.name,
         email: userCreated.email,
+        role: userCreated.role,
       },
+      token,
     });
   } catch (error) {
     console.error("Registration failed:", error);
@@ -56,12 +66,20 @@ const login = async (req, res) => {
     if (!userPassword)
       return res.status(400).json({ message: "Password is incorrect!" });
 
+    const token = jwt.sign(
+      { id: user._id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
     res.status(200).json({
       message: "Login Successful!",
       user: {
+        id: user._id,
         email: user.email,
+        role: user.role,
       },
-      token: "demo-server-token",
+      token,
     });
   } catch (error) {
     console.error("There is an issue while Logging in:", error);

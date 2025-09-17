@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema } from "../validation/registerSchema";
-import axios from "axios";
+import api from "../lib/api";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -16,9 +16,14 @@ export default function Register() {
 
   async function onSubmit(data) {
     try {
-      const res = await axios.post("http://localhost:8000/user/register", data);
-      const token = res.data?.token || "demo-token";
+      const res = await api.post("/user/register", data);
+      const token = res.data?.token;
+      const user = res.data?.user;
+      if (!token) throw new Error("No token returned from server");
       localStorage.setItem("token", token);
+      if (user) {
+        localStorage.setItem("role", user.role);
+      }
       navigate("/");
     } catch (err) {
       console.error(err);
@@ -44,7 +49,7 @@ export default function Register() {
         <p className="mt-1 text-center text-sm text-gray-500">
           Get started with Dropship in a minute.
         </p>
-{/* 
+        {/* 
         Social auth
         <div className="mt-6 flex gap-3">
           <button
@@ -100,7 +105,9 @@ export default function Register() {
               className="block w-full rounded-md border border-gray-300 p-2 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
             />
             {errors.email && (
-              <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+              <p className="mt-1 text-sm text-red-600">
+                {errors.email.message}
+              </p>
             )}
           </div>
 
