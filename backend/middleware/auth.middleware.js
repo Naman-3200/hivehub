@@ -15,3 +15,19 @@ export function authenticateToken(req, res, next) {
     next();
   });
 }
+
+export function authorizeRole(...allowedRoles) {
+  return (req, res, next) => {
+    const userRole = req.user?.role;
+
+    if (!userRole || !allowedRoles.includes(userRole)) {
+      return res.status(403).json({
+        message: "Forbidden - insufficient permissions",
+        requiredRoles: allowedRoles,
+        userRole: userRole || "user",
+      });
+    }
+
+    next();
+  };
+}

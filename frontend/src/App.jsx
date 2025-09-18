@@ -5,6 +5,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Hero from "./pages/Landing/Hero";
+import SuperAdminDashboard from "./pages/SuperAdmin/SuperAdminDashboard";
 
 function App() {
   return (
@@ -14,6 +15,14 @@ function App() {
         element={
           <ProtectedRoute>
             <Home />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/superadmin"
+        element={
+          <ProtectedRoute allowedRoles={["superadmin"]}>
+            <SuperAdminDashboard />
           </ProtectedRoute>
         }
       />

@@ -1,6 +1,18 @@
 import { Router } from "express";
 import { body } from "express-validator";
-import { login, register } from "../controller/user.controller.js";
+import {
+  deleteUser,
+  getAllUsers,
+  getMe,
+  getUserStats,
+  login,
+  register,
+  updateUserRole,
+} from "../controller/user.controller.js";
+import {
+  authenticateToken,
+  authorizeRole,
+} from "../middleware/auth.middleware.js";
 
 const router = Router();
 
@@ -38,5 +50,31 @@ router.post(
   ],
   login
 );
+
+// Protected routes
+router.get("/me", authenticateToken, getMe);
+
+// SuperAdmin only routes
+router.get("/", authenticateToken, authorizeRole("superadmin"), getAllUsers);
+
+router.get(
+  "/stats",
+  authenticateToken,
+  authorizeRole("superadmin"),
+  getUserStats
+);
+
+router.put(
+  "/:userId/role",
+  authenticateToken,
+  authorizeRole("superadmin"),
+  [
+    body("role")
+      .isIn(["user", "admin", "superadmin"])
+      .withMessage("Role must be user, admin, or superadmin"),
+  ],
+  updateUserRole
+);
+router.delete("/:userId", authenticateToken, deleteUser);
 
 export default router;
