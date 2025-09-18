@@ -1,7 +1,10 @@
 import React from 'react'
 import Navbar from './Navbar'
+import { useNavigate } from "react-router-dom";
+
 
 const Hero = () => {
+  const navigate = useNavigate();
   return (
   <div className="min-h-screen w-full bg-[#f8fafc] relative">
   {/* Diagonal Stripes Background */}
@@ -31,7 +34,8 @@ const Hero = () => {
 
         {/* Email Signup */}
         <div className="mt-6 flex items-center justify-center gap-6 max-w-md mx-auto">
-            <button className='cursor-pointer bg-violet-500 rounded-lg py-2 px-6 text-white font-semibold'>Start Free {">"}</button>
+            <button       onClick={() => navigate("/user-dashboard")}
+ className='cursor-pointer bg-violet-500 rounded-lg py-2 px-6 text-white font-semibold'>Start Free {">"}</button>
             <button className='cursor-pointer bg-violet-500 rounded-lg py-2 px-6 text-white font-semibold'>See Demo</button>
 
         </div>

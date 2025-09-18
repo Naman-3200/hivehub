@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Hero from "./pages/Landing/Hero";
 import SuperAdminDashboard from "./pages/SuperAdmin/SuperAdminDashboard";
+import ProductDashboard from "./components/UserDashboard";
 
 function App() {
   return (
@@ -18,6 +19,16 @@ function App() {
           </ProtectedRoute>
         }
       />
+
+     <Route
+        path="/user-dashboard"
+        element={
+          <ProtectedRoute>
+            <ProductDashboard />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/dashboard/superadmin"
         element={
@@ -27,6 +38,7 @@ function App() {
         }
       />
       <Route path="/login" element={<Login />} />
+      {/* <Route path="/user-dashboard" element={<ProductDashboard />} /> */}
       <Route path="/register" element={<Register />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
