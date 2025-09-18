@@ -4,6 +4,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Hero from "./pages/Landing/Hero";
 
 function App() {
   return (
