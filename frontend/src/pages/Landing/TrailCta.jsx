@@ -2,9 +2,24 @@ import React from "react";
 
 export function MembersCTA() {
   return (
-    <section className="px-4 py-16">
+    <section className="relative px-4 py-16 overflow-clip">
       <div className="max-w-7xl mx-auto">
-        <div className="bg-blue-600 rounded-3xl p-8 md:p-12 text-white">
+        <div className="bg-violet-600 rounded-3xl relative overflow-clip p-8 md:p-12 text-white">
+            {/* Diagonal Fade Grid Background - Top Right */}
+  <div
+    className="absolute inset-0 z-0"
+    style={{
+      backgroundImage: `
+        linear-gradient(to right, #d1d5db 1px, transparent 1px),
+        linear-gradient(to bottom, #d1d5db 1px, transparent 1px)
+      `,
+      backgroundSize: "32px 32px",
+      WebkitMaskImage:
+        "radial-gradient(ellipse 80% 80% at 100% 0%, #000 50%, transparent 90%)",
+      maskImage:
+        "radial-gradient(ellipse 80% 80% at 100% 0%, #000 50%, transparent 90%)",
+    }}
+  />
           <div className="grid lg:grid-cols-2 gap-8 items-center">
             {/* Left content */}
             <div className="space-y-6">

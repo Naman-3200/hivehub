@@ -37,8 +37,7 @@ const Hero = () => {
         </div>
         <div className='bg-gray-200 p-4 mt-10 w-full'>
             <div className='bg-gray-300 p-2 w-full'>
-                <img src="https://cdn.prod.website-files.com/6668551da3a255b9631ffddf/68aae5653e1614886c689f6f_home-hero-banner.png" alt="" className='h-[500px] 
-                w-full'/>
+                <img src="https://cdn.prod.website-files.com/6668551da3a255b9631ffddf/68aae5653e1614886c689f6f_home-hero-banner.png" alt="" className='h-[70vh]'/>
             </div>
         </div>
       </section>

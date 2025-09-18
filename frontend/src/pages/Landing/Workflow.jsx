@@ -2,7 +2,7 @@ import React from "react";
 
 export default function Workflow() {
   return (
-    <section className="bg-white py-16 px-4 md:px-20">
+    <section className="bg-white px-4 md:px-20">
       <div className="max-w-6xl mx-auto mt-16 grid md:grid-cols-2 gap-12 items-center">
         {/* Left: Image */}
         <div className="rounded-xl overflow-hidden  border-gray-300 border-4">

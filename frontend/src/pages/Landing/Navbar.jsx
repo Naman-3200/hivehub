@@ -9,7 +9,7 @@ export default function Navbar() {
 
   return (
     <div className="sticky top-0 z-50 bg-white text-gray-800 border-b-2 border-gray-200">
-      <div className=' bg-violet-500 py-1 top-0'>hello</div>
+      <div className=' bg-violet-500 py-1 top-0 text-center text-white'>NEW: Build your store in minutes with Hivehub and go live!</div>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
