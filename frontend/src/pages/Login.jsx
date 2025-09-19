@@ -32,6 +32,13 @@ export default function Login() {
     }
   }
 
+  // Add Google OAuth handler
+  const handleGoogleLogin = () => {
+    window.location.href = `${
+      import.meta.env.VITE_API_URL || "http://localhost:8000"
+    }/api/auth/google`;
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-md bg-white shadow-lg rounded-2xl p-8">
@@ -49,19 +56,50 @@ export default function Login() {
         <p className="mt-1 text-center text-sm text-gray-500">
           Welcome back! Sign in to your account below.
         </p>
-        <div className="mt-6 flex gap-3"> <button className="w-full flex items-center justify-center border border-gray-300 rounded-md py-2 hover:bg-gray-50"> <img src="https://www.svgrepo.com/show/355037/google.svg" alt="Google" className="w-3 h-5 mr-2" /> Google </button> </div>
+
+        {/* Google Login Button */}
+        <div className="mt-6 flex gap-3">
+          <button
+            onClick={handleGoogleLogin}
+            type="button"
+            className="w-full flex items-center justify-center border border-gray-300 rounded-md py-2 hover:bg-gray-50 transition-colors"
+          >
+            <img
+              src="https://www.svgrepo.com/show/355037/google.svg"
+              alt="Google"
+              className="w-5 h-5 mr-2"
+            />
+            Continue with Google
+          </button>
+        </div>
+
+        {/* Divider */}
+        <div className="flex items-center my-6">
+          <div className="flex-grow h-px bg-gray-300" />
+          <span className="px-3 text-sm text-gray-500">
+            or sign in with email
+          </span>
+          <div className="flex-grow h-px bg-gray-300" />
+        </div>
+
         {/* Form */}
-        <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
+        <form
+          className="space-y-4"
+          onSubmit={handleSubmit(onSubmit)}
+          noValidate
+        >
           <div>
             <input
               {...register("email")}
               type="email"
               placeholder="Email Address"
               autoComplete="email"
-              className="block mt-3 w-full rounded-md border border-gray-300 p-2 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+              className="block w-full rounded-md border border-gray-300 p-2 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
             />
             {errors.email && (
-              <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+              <p className="mt-1 text-sm text-red-600">
+                {errors.email.message}
+              </p>
             )}
           </div>
 
@@ -107,7 +145,5 @@ export default function Login() {
         </div>
       </div>
     </div>
-
-
   );
 }

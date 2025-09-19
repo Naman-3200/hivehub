@@ -1,6 +1,5 @@
 import axios from "axios";
-import { User } from "../model/user.model.js";
-
+import User from "../model/user.model.js";
 
 /**
  * GET /api/products
@@ -89,7 +88,6 @@ export const removeFromMyProducts = async (req, res) => {
     res.status(500).json({ error: "Failed to remove product" });
   }
 };
-
 
 export const searchProducts = async (req, res) => {
   try {

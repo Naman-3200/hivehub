@@ -2,7 +2,11 @@ import mongoose from "mongoose";
 
 const StoreProductSchema = new mongoose.Schema(
   {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     cjProductId: { type: String, required: true },
     name: String,
     image: String,
