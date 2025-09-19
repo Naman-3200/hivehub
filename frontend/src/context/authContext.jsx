@@ -1,10 +1,10 @@
+/* eslint-disable no-unused-vars */
 import React, { createContext, useEffect, useState } from "react";
 import api from "../lib/api";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext();
 
-// this function basically checks if the user is verified or not
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -17,12 +17,28 @@ export function AuthProvider({ children }) {
         return;
       }
       try {
-        const res = await api.get("/user/me");
-        setUser(res.data.user);
-        localStorage.setItem("role", res.data.user.role || "user");
-      } catch {
-        localStorage.removeItem("token");
-        localStorage.removeItem("role");
+        // Try regular auth first
+        let res = await api.get("/user/me");
+        if (res.data.success) {
+          setUser(res.data.user);
+          localStorage.setItem("role", res.data.user.role || "user");
+        } else {
+          throw new Error("No valid auth");
+        }
+      } catch (error) {
+        // If regular auth fails, try Google auth status
+        try {
+          const googleRes = await api.get("/api/auth/status");
+          if (googleRes.data.success) {
+            setUser(googleRes.data.user);
+            localStorage.setItem("role", googleRes.data.user.role || "user");
+          } else {
+            throw new Error("No valid auth");
+          }
+        } catch {
+          localStorage.removeItem("token");
+          localStorage.removeItem("role");
+        }
       } finally {
         setLoading(false);
       }

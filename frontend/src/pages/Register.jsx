@@ -31,13 +31,19 @@ export default function Register() {
     }
   }
 
+  // Add Google OAuth handler
+  const handleGoogleSignup = () => {
+    window.location.href = `${
+      import.meta.env.VITE_API_URL || "http://localhost:8000"
+    }/api/auth/google`;
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-md bg-white shadow-lg rounded-2xl p-8">
         {/* Logo */}
         <div className="flex justify-center mb-6">
           <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
-            {/* replace with your SVG/logo */}
             <span>⧉</span>
           </div>
         </div>
@@ -47,41 +53,33 @@ export default function Register() {
           Create your account
         </h2>
         <p className="mt-1 text-center text-sm text-gray-500">
-          Get started with Dropship in a minute.
+          Get started with Hive Hub in a minute.
         </p>
-        {/* 
-        Social auth
+
+        {/* Google Signup Button */}
         <div className="mt-6 flex gap-3">
           <button
+            onClick={handleGoogleSignup}
             type="button"
-            className="w-1/2 flex items-center justify-center border border-gray-300 rounded-md py-2 hover:bg-gray-50"
+            className="w-full flex items-center justify-center border border-gray-300 rounded-md py-2 hover:bg-gray-50 transition-colors"
           >
             <img
               src="https://www.svgrepo.com/show/355037/google.svg"
               alt="Google"
               className="w-5 h-5 mr-2"
             />
-            Google
+            Continue with Google
           </button>
-          <button
-            type="button"
-            className="w-1/2 flex items-center justify-center border border-gray-300 rounded-md py-2 hover:bg-gray-50"
-          >
-            <img
-              src="https://www.svgrepo.com/show/303128/apple-logo.svg"
-              alt="Apple"
-              className="w-5 h-5 mr-2"
-            />
-            Apple
-          </button>
-        </div> */}
+        </div>
 
         {/* Divider */}
-        {/* <div className="flex items-center my-6">
+        <div className="flex items-center my-6">
           <div className="flex-grow h-px bg-gray-300" />
-          <span className="px-3 text-sm text-gray-500">or sign up with email</span>
+          <span className="px-3 text-sm text-gray-500">
+            or sign up with email
+          </span>
           <div className="flex-grow h-px bg-gray-300" />
-        </div> */}
+        </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -90,7 +88,7 @@ export default function Register() {
               {...register("name")}
               type="text"
               placeholder="Full Name"
-              className="block mt-3 w-full rounded-md border border-gray-300 p-2 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+              className="block w-full rounded-md border border-gray-300 p-2 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
             />
             {errors.name && (
               <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
