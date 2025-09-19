@@ -8,7 +8,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "*",
+    origin: "https://hive-hub-tau.vercel.app",
     credentials: true,
   })
 );
