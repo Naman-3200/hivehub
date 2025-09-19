@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { User } from "../model/user.model.js";
+import User from "../model/user.model.js";
 import { validationResult } from "express-validator";
 
 // helper function to get token
@@ -94,16 +94,24 @@ export const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
     }
 
-    res.json({ user });
+    res.json({
+      success: true,
+      user,
+    });
   } catch (error) {
     console.error("Get me error:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };
-
 // for superadmin - this function will retrieve all users (limit by 10)
 export const getAllUsers = async (req, res) => {
   try {
