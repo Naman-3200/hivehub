@@ -20,11 +20,23 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin", "superadmin"],
       default: "user",
     },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    profilePicture: {
+      type: String,
+      default: "",
+    },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    myProducts: [myProductSchema], // ⭐ NEW FIELD
+    password: { type: String, required: false }, // ⭐ CHANGE: Make password optional for Google users
+    myProducts: [myProductSchema],
+    isVerified: { type: Boolean, default: false }, // ⭐ ADD: Add isVerified field
   },
   { timestamps: true }
 );
 
-export const User = mongoose.model("User", userSchema);
+// ⭐ CHANGE: Use default export instead of named export
+const User = mongoose.model("User", userSchema);
+export default User;
