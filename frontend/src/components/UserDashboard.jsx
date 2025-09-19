@@ -8,6 +8,7 @@ const ProductDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+
   const [myProducts, setMyProducts] = useState([]);
   const [allProductsData, setAllProductsData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -20,7 +21,7 @@ const ProductDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
-      const res = await fetch("http://localhost:8000/api/my-products", {
+      const res = await fetch("https://hivehub.mahitechnocrafts.in/api/my-products", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch My Products");
@@ -39,7 +40,7 @@ const searchCJProducts = async (query) => {
   setLoading(true);
   setError(null);
   try {
-    const res = await fetch(`http://localhost:8000/api/products/search?q=${encodeURIComponent(query)}`);
+    const res = await fetch(`https://hivehub.mahitechnocrafts.in/api/products/search?q=${encodeURIComponent(query)}`);
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const data = await res.json();
     if (!data?.data?.list) throw new Error("Invalid API response");
@@ -76,7 +77,7 @@ const searchCJProducts = async (query) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:8000/api/products");
+      const res = await fetch("https://hivehub.mahitechnocrafts.in/api/products");
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
       if (!data?.data?.list) throw new Error("Invalid API response structure");
@@ -167,7 +168,7 @@ const searchCJProducts = async (query) => {
         alert("You must be logged in");
         return;
       }
-      const res = await fetch("http://localhost:8000/api/my-products", {
+      const res = await fetch("https://hivehub.mahitechnocrafts.in/api/my-products", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -196,7 +197,7 @@ const searchCJProducts = async (query) => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    const res = await fetch(`http://localhost:8000/api/my-products/${productId}`, {
+    const res = await fetch(`https://hivehub.mahitechnocrafts.in/api/my-products/${productId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
