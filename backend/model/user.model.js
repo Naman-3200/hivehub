@@ -1,26 +1,28 @@
+// models/user.model.js
 import mongoose from "mongoose";
 
-const userSchema = mongoose.Schema(
+const myProductSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
+    productId: { type: String, required: true }, // CJ pid
+    name: String,
+    price: Number,
+    image: String,
+    category: String,
+  },
+  { _id: false }
+);
+
+const userSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, trim: true },
     role: {
       type: String,
-      required: true,
       enum: ["user", "admin", "superadmin"],
       default: "user",
     },
-    email: {
-      type: String,
-      required: true,
-    },
-    password: {
-      type: String,
-      required: true,
-    },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    myProducts: [myProductSchema], // ⭐ NEW FIELD
   },
   { timestamps: true }
 );
