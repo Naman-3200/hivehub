@@ -30,13 +30,17 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: false }, // ⭐ CHANGE: Make password optional for Google users
+    password: { type: String, required: false },
     myProducts: [myProductSchema],
-    isVerified: { type: Boolean, default: false }, // ⭐ ADD: Add isVerified field
+    isVerified: { type: Boolean, default: false },
+    // NEW OTP FIELDS
+    otp: { type: String },
+    otpExpires: { type: Date },
+    otpAttempts: { type: Number, default: 0 },
+    lastOtpSent: { type: Date },
   },
   { timestamps: true }
 );
 
-// ⭐ CHANGE: Use default export instead of named export
 const User = mongoose.model("User", userSchema);
 export default User;

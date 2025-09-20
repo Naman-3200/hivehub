@@ -1,5 +1,250 @@
 import jwt from "jsonwebtoken";
 import User from "../model/user.model.js";
+import { generateOTP, sendOTPEmail } from "../services/EmailService.js";
+
+// Send OTP for email verification
+export const sendOTP = async (req, res) => {
+  try {
+    const { email, name } = req.body;
+
+    console.log("📧 Send OTP request:", { email, name }); // Debug log
+
+    if (!email || !name) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and name are required",
+      });
+    }
+
+    // Check if user exists
+    const existingUser = await User.findOne({ email });
+    console.log(
+      "🔍 Existing user:",
+      existingUser
+        ? {
+            email: existingUser.email,
+            isVerified: existingUser.isVerified,
+            hasOtp: !!existingUser.otp,
+          }
+        : "None"
+    ); // Debug log
+
+    // Check if user exists and is already verified
+    if (existingUser && existingUser.isVerified === true) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is already verified. Please sign in instead.",
+      });
+    }
+
+    // Rate limiting: Check if OTP was sent recently
+    if (existingUser && existingUser.lastOtpSent) {
+      const timeSinceLastOtp = Date.now() - existingUser.lastOtpSent.getTime();
+      const oneMinute = 60 * 1000;
+
+      if (timeSinceLastOtp < oneMinute) {
+        return res.status(429).json({
+          success: false,
+          message: "Please wait before requesting another OTP",
+          retryAfter: Math.ceil((oneMinute - timeSinceLastOtp) / 1000),
+        });
+      }
+    }
+
+    // Generate OTP
+    const otp = generateOTP();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    console.log("🔑 Generated OTP:", otp); // Debug log (remove in production)
+
+    // Update or create user with OTP and ensure isVerified is false
+    const updatedUser = await User.findOneAndUpdate(
+      { email },
+      {
+        $set: {
+          name: name, // Update name
+          otp,
+          otpExpires,
+          lastOtpSent: new Date(),
+          isVerified: false, // Explicitly set to false
+          role: "user", // Ensure role is set for new users
+        },
+        $inc: { otpAttempts: 1 },
+      },
+      { upsert: true, new: true }
+    );
+
+    console.log("💾 User updated:", {
+      email: updatedUser.email,
+      isVerified: updatedUser.isVerified,
+      hasOtp: !!updatedUser.otp,
+    }); // Debug log
+
+    // Send OTP email
+    await sendOTPEmail(email, name, otp);
+
+    console.log(`✅ OTP sent to ${email}: ${otp}`); // Remove in production
+
+    res.json({
+      success: true,
+      message: "OTP sent successfully to your email",
+    });
+  } catch (error) {
+    console.error("❌ Send OTP error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to send OTP",
+      error: error.message, // Add error details for debugging
+    });
+  }
+};
+
+// Verify OTP and complete registration
+export const verifyOTP = async (req, res) => {
+  try {
+    const { email, otp, password, name } = req.body;
+
+    console.log("🔍 Verify OTP request:", {
+      email,
+      otp: otp ? "***" : undefined,
+    }); // Debug log
+
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and OTP are required",
+      });
+    }
+
+    // Find user with matching email and OTP
+    const user = await User.findOne({
+      email,
+      otp,
+      otpExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      console.log("❌ Invalid or expired OTP for:", email); // Debug log
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired OTP",
+      });
+    }
+
+    // Check if user exceeded OTP attempts
+    if (user.otpAttempts > 5) {
+      return res.status(429).json({
+        success: false,
+        message: "Too many OTP attempts. Please request a new OTP.",
+      });
+    }
+
+    // Complete user registration if password provided
+    if (password && name) {
+      const bcrypt = await import("bcrypt");
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      user.name = name;
+      user.password = hashedPassword;
+      user.role = user.role || "user"; // Set default role if not set
+    }
+
+    // Mark user as verified and clear OTP data
+    user.isVerified = true;
+    user.otp = undefined;
+    user.otpExpires = undefined;
+    user.otpAttempts = 0;
+    user.lastOtpSent = undefined;
+
+    await user.save();
+
+    console.log("✅ User verified successfully:", user.email); // Debug log
+
+    // Generate JWT token
+    const token = jwt.sign(
+      {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      success: true,
+      message: "Email verified successfully",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Verify OTP error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to verify OTP",
+      error: error.message,
+    });
+  }
+};
+
+// Resend OTP
+export const resendOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email, isVerified: false });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found or already verified",
+      });
+    }
+
+    // Rate limiting
+    if (user.lastOtpSent) {
+      const timeSinceLastOtp = Date.now() - user.lastOtpSent.getTime();
+      const oneMinute = 60 * 1000;
+
+      if (timeSinceLastOtp < oneMinute) {
+        return res.status(429).json({
+          success: false,
+          message: "Please wait before requesting another OTP",
+          retryAfter: Math.ceil((oneMinute - timeSinceLastOtp) / 1000),
+        });
+      }
+    }
+
+    // Generate new OTP
+    const otp = generateOTP();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+    user.otp = otp;
+    user.otpExpires = otpExpires;
+    user.lastOtpSent = new Date();
+    user.otpAttempts = 0; // Reset attempts
+
+    await user.save();
+    await sendOTPEmail(email, user.name, otp);
+
+    console.log(`✅ OTP resent to ${email}: ${otp}`); // Remove in production
+
+    res.json({
+      success: true,
+      message: "OTP resent successfully",
+    });
+  } catch (error) {
+    console.error("Resend OTP error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to resend OTP",
+    });
+  }
+};
 
 export const googleAuthSuccess = async (req, res) => {
   try {

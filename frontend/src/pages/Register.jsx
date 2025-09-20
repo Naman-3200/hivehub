@@ -16,22 +16,28 @@ export default function Register() {
 
   async function onSubmit(data) {
     try {
-      const res = await api.post("/user/register", data);
-      const token = res.data?.token;
-      const user = res.data?.user;
-      if (!token) throw new Error("No token returned from server");
-      localStorage.setItem("token", token);
-      if (user) {
-        localStorage.setItem("role", user.role);
+      // Send OTP instead of direct registration
+      const response = await api.post("/api/auth/send-otp", {
+        email: data.email,
+        name: data.name,
+      });
+
+      if (response.data.success) {
+        // Navigate to OTP verification with user data
+        navigate("/verify-otp", {
+          state: {
+            email: data.email,
+            name: data.name,
+            password: data.password,
+          },
+        });
       }
-      navigate("/");
     } catch (err) {
       console.error(err);
       alert(err?.response?.data?.message || "Registration failed");
     }
   }
 
-  // Add Google OAuth handler
   const handleGoogleSignup = () => {
     window.location.href = `${
       import.meta.env.VITE_API_URL || "http://localhost:8000"
@@ -142,7 +148,7 @@ export default function Register() {
             disabled={isSubmitting}
             className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition disabled:opacity-60"
           >
-            {isSubmitting ? "Creating…" : "Create account"}
+            {isSubmitting ? "Sending verification..." : "Continue with Email"}
           </button>
         </form>
 
