@@ -8,6 +8,8 @@ import {
   verifyOTP,
   resendOTP,
   sendOTP,
+   forgotPassword,   // <-- add this
+  resetPassword, 
 } from "../controller/auth.controller.js";
 
 const router = express.Router();
@@ -32,6 +34,8 @@ router.get(
 router.get("/failure", googleAuthFailure);
 router.post("/logout", logout);
 router.get("/status", getAuthStatus);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 
 // OTP routes
 router.post("/send-otp", sendOTP);

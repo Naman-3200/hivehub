@@ -31,13 +31,20 @@ const userSchema = new mongoose.Schema(
     },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: false },
+
     myProducts: [myProductSchema],
+
     isVerified: { type: Boolean, default: false },
-    // NEW OTP FIELDS
+
+    // OTP FIELDS
     otp: { type: String },
     otpExpires: { type: Date },
     otpAttempts: { type: Number, default: 0 },
     lastOtpSent: { type: Date },
+
+    // RESET PASSWORD FIELDS
+    resetPasswordToken: { type: String },
+    resetPasswordExpiry: { type: Date },
   },
   { timestamps: true }
 );

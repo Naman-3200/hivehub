@@ -21,7 +21,7 @@ export default function Register() {
         email: data.email,
         name: data.name,
       });
-
+      console.log(response);
       if (response.data.success) {
         // Navigate to OTP verification with user data
         navigate("/verify-otp", {

@@ -1,6 +1,8 @@
 import jwt from "jsonwebtoken";
 import User from "../model/user.model.js";
-import { generateOTP, sendOTPEmail } from "../services/EmailService.js";
+import { generateOTP, sendOTPEmail, sendResetPasswordEmail } from "../services/EmailService.js";
+
+import crypto from "crypto";
 
 // Send OTP for email verification
 export const sendOTP = async (req, res) => {
@@ -313,6 +315,100 @@ export const getAuthStatus = (req, res) => {
     res.status(401).json({
       success: false,
       message: "Not authenticated",
+    });
+  }
+};
+
+// ↑ add sendResetPasswordEmail inside EmailService.js
+
+// ===========================
+// Forgot Password (send reset link)
+// ===========================
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Generate reset token (random string)
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetTokenExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes
+
+    // Save to user
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpiry = resetTokenExpiry;
+    await user.save();
+
+    // Create reset URL (frontend route)
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
+
+    // Send email via your EmailService
+    await sendResetPasswordEmail(user.email, user.name, resetUrl);
+
+    res.json({
+      success: true,
+      message: "Password reset link sent to your email",
+    });
+  } catch (error) {
+    console.error("❌ Forgot password error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to send password reset link",
+    });
+  }
+};
+
+// ===========================
+// Reset Password (via token)
+// ===========================
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Token and new password are required",
+      });
+    }
+
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpiry: { $gt: Date.now() }, // check not expired
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired token",
+      });
+    }
+
+    // Hash new password
+    const bcrypt = await import("bcrypt");
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    user.password = hashedPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpiry = undefined;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Password reset successfully",
+    });
+  } catch (error) {
+    console.error("❌ Reset password error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to reset password",
     });
   }
 };
