@@ -5,10 +5,14 @@ import {
   googleAuthFailure,
   logout,
   getAuthStatus,
+  verifyOTP,
+  resendOTP,
+  sendOTP,
 } from "../controller/auth.controller.js";
 
 const router = express.Router();
 
+// Google OAuth routes
 router.get(
   "/google",
   passport.authenticate("google", {
@@ -28,5 +32,10 @@ router.get(
 router.get("/failure", googleAuthFailure);
 router.post("/logout", logout);
 router.get("/status", getAuthStatus);
+
+// OTP routes
+router.post("/send-otp", sendOTP);
+router.post("/verify-otp", verifyOTP);
+router.post("/resend-otp", resendOTP);
 
 export default router;

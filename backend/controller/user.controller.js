@@ -66,6 +66,14 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    // Check if email is verified
+    if (!user.isVerified) {
+      return res.status(401).json({
+        message: "Please verify your email before logging in",
+        needsVerification: true,
+      });
+    }
+
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
       return res.status(401).json({ message: "Invalid credentials" });
