@@ -9,7 +9,7 @@ export const getProducts = async (req, res) => {
   try {
     // Allow optional pageNum & pageSize query parameters
     const pageNum = req.query.pageNum || 1;
-    const pageSize = req.query.pageSize || 50;
+    const pageSize = req.query.pageSize || 200;
 
     const response = await axios.get(
       "https://developers.cjdropshipping.com/api2.0/v1/product/list",

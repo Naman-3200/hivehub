@@ -13,7 +13,7 @@ const ProductDashboard = () => {
   const [allProductsData, setAllProductsData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const itemsPerPage = 6;
+  const itemsPerPage = 8;
    
 
   // 🔑 NEW: load saved products for the logged-in user
@@ -73,39 +73,90 @@ const searchCJProducts = async (query) => {
 
 
   /** Fetch products from your backend proxy */
-  const fetchProducts = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("https://hivehub.mahitechnocrafts.in/api/products");
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      const data = await res.json();
-      if (!data?.data?.list) throw new Error("Invalid API response structure");
+  // const fetchProducts = async () => {
+  //   setLoading(true);
+  //   setError(null);
+  //   try {
+  //     const res = await fetch("https://hivehub.mahitechnocrafts.in/api/products");
+  //     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+  //     const data = await res.json();
+  //     if (!data?.data?.list) throw new Error("Invalid API response structure");
 
-      const mappedProducts = data.data.list.map((item, index) => ({
-        id: item.pid || `product-${index}`,
-        name: item.productNameEn || item.productName || "Unknown Product",
-        price: parseFloat(item.sellPrice?.split(" -- ")[0] || "0"),
-        rating: Math.random() * 2 + 3,
-        reviews: Math.floor(Math.random() * 1000) + 50,
-        category: item.categoryName || "General",
-        image: item.productImage || "/placeholder.svg",
-        trending: Math.random() > 0.7,
-        bestseller: Math.random() > 0.8,
-        sku: item.productSku,
-        weight: item.productWeight,
-        isFreeShipping: item.isFreeShipping,
-      }));
+  //     const mappedProducts = data.data.list.map((item, index) => ({
+  //       id: item.pid || `product-${index}`,
+  //       name: item.productNameEn || item.productName || "Unknown Product",
+  //       price: parseFloat(item.sellPrice?.split(" -- ")[0] || "0"),
+  //       rating: Math.random() * 2 + 3,
+  //       reviews: Math.floor(Math.random() * 1000) + 50,
+  //       category: item.categoryName || "General",
+  //       image: item.productImage || "/placeholder.svg",
+  //       trending: Math.random() > 0.7,
+  //       bestseller: Math.random() > 0.8,
+  //       sku: item.productSku,
+  //       weight: item.productWeight,
+  //       isFreeShipping: item.isFreeShipping,
+  //     }));
 
-      setAllProductsData(mappedProducts);
-    } catch (err) {
-      console.error("Error fetching products:", err);
-      setError(err.message);
+  //     setAllProductsData(mappedProducts);
+  //   } catch (err) {
+  //     console.error("Error fetching products:", err);
+  //     setError(err.message);
+  //     setAllProductsData([]);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+const fetchProducts = async (page = 1, size = 200) => {
+  setLoading(true);
+  setError(null);
+  try {
+    const res = await fetch(
+      `https://hivehub.mahitechnocrafts.in/api/products?pageNum=${page}&pageSize=${size}`
+    );
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    const productsList = data?.data?.list ?? data?.list ?? [];
+    
+    if (!Array.isArray(productsList) || productsList.length === 0) {
       setAllProductsData([]);
-    } finally {
-      setLoading(false);
+      setError("No products returned from API");
+      return;
     }
+
+
+    const mappedProducts = data.data.list.map((item, index) => {
+  const daysOld = (Date.now() - item.createTime) / (1000 * 60 * 60 * 24); // convert ms to days
+  const velocity = (item.listedNum || 0) / Math.max(daysOld, 1); // listings per day
+
+  return {
+    id: item.pid || `product-${index}`,
+    name: item.productNameEn || item.productName || "Unknown Product",
+    price: parseFloat(item.sellPrice?.split(" -- ")[0] || "0"),
+    rating: Math.random() * 2 + 3, // optional: you can compute rating from data if available
+    reviews: Math.floor(Math.random() * 1000) + 50, // optional
+    category: item.categoryName || "General",
+    image: item.productImage || "/placeholder.svg",
+    // data-driven flags
+    trending: velocity > 20,               // example threshold: >20 listings/day
+    bestseller: (item.listedNum || 0) > 0, // example threshold: more than 500 listings
+    sku: item.productSku,
+    weight: item.productWeight,
+    isFreeShipping: item.isFreeShipping,
   };
+});
+
+
+    // 👇 append to existing list if you want to load *all* pages
+    setAllProductsData(prev => [...prev, ...mappedProducts]);
+  } catch (err) {
+    console.error("Error fetching products:", err);
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   useEffect(() => {
     fetchProducts();
@@ -304,7 +355,6 @@ const searchCJProducts = async (query) => {
 
             {error && (
               <div className="error-message">
-                <p>Error loading products: {error}</p>
                 <p>Please try refreshing.</p>
               </div>
             )}
