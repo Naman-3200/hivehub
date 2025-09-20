@@ -24,7 +24,7 @@ export default function Login() {
         if (user) {
           localStorage.setItem("role", user.role);
         }
-        navigate("/");
+        navigate("/user-dashboard");
       }
     } catch (err) {
       console.error(err);
