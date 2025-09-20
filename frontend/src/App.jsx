@@ -9,7 +9,8 @@ import SuperAdminDashboard from "./pages/SuperAdmin/SuperAdminDashboard";
 import ProductDashboard from "./components/UserDashboard";
 import AuthSuccess from "./pages/AuthSuccess";
 import AuthFailure from "./pages/AuthFailure";
-
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 function App() {
   return (
     <Routes>
@@ -34,6 +35,9 @@ function App() {
       />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+
       <Route path="/verify-otp" element={<VerifyOTP />} />
       <Route path="/auth/success" element={<AuthSuccess />} />
       <Route path="/auth/failure" element={<AuthFailure />} />
