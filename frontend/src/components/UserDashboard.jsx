@@ -344,20 +344,14 @@ const fetchProducts = async (page = 1, size = 200) => {
             <div className="page-header">
               <h1>All Products</h1>
               <p>Discover and add products to your collection</p>
-              <button
-                onClick={fetchProducts}
-                disabled={loading}
-                className="refresh-button"
-              >
-                {loading ? "Loading..." : "Refresh Products"}
-              </button>
+             
             </div>
 
-            {error && (
+            {/* {error && (
               <div className="error-message">
                 <p>Please try refreshing.</p>
               </div>
-            )}
+            )} */}
 
             {/* Search + Filter */}
             <div className="controls">
