@@ -12,7 +12,7 @@ export default function AuthSuccess() {
     if (token) {
       console.log("✅ AuthSuccess: Token found. Saving to localStorage.");
       localStorage.setItem("token", token);
-      window.location.href = "/";
+      window.location.href = "/user-dashboard";
     } else {
       console.error(
         "❌ AuthSuccess: No token found in URL. Redirecting to failure."
