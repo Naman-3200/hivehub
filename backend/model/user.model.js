@@ -8,8 +8,11 @@ const myProductSchema = new mongoose.Schema(
     price: Number,
     image: String,
     category: String,
+
+        storeId: { type: String, required: true },
+        published: { type: Boolean, default: false }
   },
-  { _id: false }
+  { _id: false, timestamps: true }
 );
 
 const userSchema = new mongoose.Schema(

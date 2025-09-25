@@ -3,6 +3,12 @@ import User from "../model/user.model.js";
 import { generateOTP, sendOTPEmail, sendResetPasswordEmail } from "../services/EmailService.js";
 
 import crypto from "crypto";
+import dotenv from "dotenv";
+dotenv.config();
+
+
+console.log("JWT Secret Loaded:", process.env.JWT_SECRET);
+
 
 // Send OTP for email verification
 export const sendOTP = async (req, res) => {
@@ -248,32 +254,131 @@ export const resendOTP = async (req, res) => {
   }
 };
 
+// export const googleAuthSuccess = async (req, res) => {
+//   try {
+//     if (!req.user) {
+//       console.log("No user in request");
+//       return res.redirect(`${process.env.CLIENT_URL}/auth/failure`);
+//     }
+
+//     const token = jwt.sign(
+//       {
+//         id: req.user._id,
+//         email: req.user.email,
+//         role: req.user.role, // Added role field
+//       },
+//       process.env.JWT_SECRET,
+//       { expiresIn: "7d" }
+//     );
+
+//     console.log("Token generated:", token ? "Yes" : "No");
+
+//     const redirectURL = `${process.env.CLIENT_URL}/auth-success?token=${token}`;
+//     console.log("Redirecting to:", redirectURL);
+
+//     res.redirect(redirectURL);
+//   } catch (error) {
+//     console.error("Google auth success error:", error);
+//     res.redirect(`${process.env.CLIENT_URL}/auth/failure`);
+//   }
+// };
+
+
 export const googleAuthSuccess = async (req, res) => {
   try {
-    if (!req.user) {
-      console.log("No user in request");
-      return res.redirect(`${process.env.CLIENT_URL}/auth/failure`);
+    const user = req.user;
+    console.log("🔍 Google Auth Success - User:", user);
+    
+    if (!user) {
+      return res.status(400).json({ success: false, message: "Authentication failed" });
     }
 
-    const token = jwt.sign(
-      {
-        id: req.user._id,
-        email: req.user.email,
-        role: req.user.role, // Added role field
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    const jwtSecret = process.env.JWT_SECRET || "ndujrijrfij";
+    console.log("🔍 JWT Secret in googleAuthSuccess:", jwtSecret);
+    console.log("🔍 JWT Secret length:", jwtSecret.length);
 
-    console.log("Token generated:", token ? "Yes" : "No");
+    // 🚨 FIX: Convert ObjectId to string
+    const tokenPayload = { 
+      id: user._id.toString(), // Convert ObjectId to string!
+      email: user.email, 
+      role: user.role || 'user' 
+    };
+    
+    console.log("🔍 Token payload (after conversion):", tokenPayload);
 
-    const redirectURL = `${process.env.CLIENT_URL}/auth/success?token=${token}`;
-    console.log("Redirecting to:", redirectURL);
+    const token = jwt.sign(tokenPayload, jwtSecret, { expiresIn: "7d" });
 
-    res.redirect(redirectURL);
+    console.log("🔍 Generated token length:", token.length);
+    console.log("🔍 Token first 50 chars:", token.substring(0, 231));
+
+    // Test verification
+    try {
+      const testVerify = jwt.verify(token, jwtSecret);
+      console.log("✅ Token verification test PASSED:", testVerify);
+    } catch (testError) {
+      console.log("❌ Token verification test FAILED:", testError.message);
+    }
+
+    // Set cookie as backup
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
+    const frontendURL = process.env.FRONTEND_URL || "http://localhost:5173";
+    res.redirect(`${frontendURL}/auth-success?token=${token}`);
+    
   } catch (error) {
-    console.error("Google auth success error:", error);
-    res.redirect(`${process.env.CLIENT_URL}/auth/failure`);
+    console.error("🔍 Google auth error:", error);
+    const frontendURL = process.env.FRONTEND_URL || "http://localhost:5173";
+    res.redirect(`${frontendURL}/login?error=auth_failed`);
+  }
+};
+
+export const getAuthStatus = async (req, res) => {
+  try {
+    const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
+    
+    console.log("🔍 Auth Status - Token received:", token ? `${token.substring(0, 30)}...` : "null");
+    
+    if (!token) {
+      return res.status(401).json({ 
+        success: false, 
+        message: "No token provided" 
+      });
+    }
+
+    const jwtSecret = process.env.JWT_SECRET || "dev-secret";
+    console.log("🔍 Auth Status - JWT Secret:", jwtSecret);
+
+    const decoded = jwt.verify(token, jwtSecret);
+    console.log("🔍 Auth Status - Decoded token:", decoded);
+    
+    // Make sure to import your User model
+    const user = await User.findById(decoded.id).select('-password');
+    console.log("🔍 Auth Status - User found:", !!user);
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "User not found" 
+      });
+    }
+
+    res.json({
+      success: true,
+      user: user,
+      token: token
+    });
+  } catch (error) {
+    console.error("🔍 Auth status error:", error.name, error.message);
+    res.status(403).json({ 
+      success: false, 
+      message: "Invalid token",
+      error: error.message
+    });
   }
 };
 
@@ -298,32 +403,34 @@ export const logout = (req, res) => {
   });
 };
 
-export const getAuthStatus = (req, res) => {
-  console.log("🔍 Auth status check - User:", req.user ? "Exists" : "None");
+// export const getAuthStatus = (req, res) => {
+//   console.log("🔍 Auth status check - User:", req.user ? "Exists" : "None");
 
-  if (req.user) {
-    res.json({
-      success: true,
-      user: {
-        id: req.user._id,
-        name: req.user.name,
-        email: req.user.email,
-        profilePicture: req.user.profilePicture,
-      },
-    });
-  } else {
-    res.status(401).json({
-      success: false,
-      message: "Not authenticated",
-    });
-  }
-};
+//   if (req.user) {
+//     res.json({
+//       success: true,
+//       user: {
+//         id: req.user._id,
+//         name: req.user.name,
+//         email: req.user.email,
+//         profilePicture: req.user.profilePicture,
+//       },
+//     });
+//   } else {
+//     res.status(401).json({
+//       success: false,
+//       message: "Not authenticated",
+//     });
+//   }
+// };
 
 // ↑ add sendResetPasswordEmail inside EmailService.js
 
 // ===========================
 // Forgot Password (send reset link)
 // ===========================
+
+
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;

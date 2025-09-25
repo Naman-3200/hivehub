@@ -15,13 +15,13 @@ const ProductDashboard = () => {
   const [error, setError] = useState(null);
   const itemsPerPage = 8;
    
-
+const token = localStorage.getItem("token");
   // 🔑 NEW: load saved products for the logged-in user
   const fetchMyProducts = async () => {
     try {
-      const token = localStorage.getItem("token");
+      // const token = localStorage.getItem("token");
       if (!token) return;
-      const res = await fetch("https://hivehub.mahitechnocrafts.in/api/my-products", {
+      const res = await fetch("http://localhost:8000/api/my-products", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch My Products");
@@ -40,7 +40,7 @@ const searchCJProducts = async (query) => {
   setLoading(true);
   setError(null);
   try {
-    const res = await fetch(`https://hivehub.mahitechnocrafts.in/api/products/search?q=${encodeURIComponent(query)}`);
+    const res = await fetch(`http://localhost:8000/api/products/search?q=${encodeURIComponent(query)}`);
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const data = await res.json();
     if (!data?.data?.list) throw new Error("Invalid API response");
@@ -112,7 +112,7 @@ const fetchProducts = async (page = 1, size = 200) => {
   setError(null);
   try {
     const res = await fetch(
-      `https://hivehub.mahitechnocrafts.in/api/products?pageNum=${page}&pageSize=${size}`
+      `http://localhost:8000/api/products?pageNum=${page}&pageSize=${size}`
     );
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const data = await res.json();
@@ -219,7 +219,7 @@ const fetchProducts = async (page = 1, size = 200) => {
         alert("You must be logged in");
         return;
       }
-      const res = await fetch("https://hivehub.mahitechnocrafts.in/api/my-products", {
+      const res = await fetch("http://localhost:8000/api/my-products", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -248,7 +248,7 @@ const fetchProducts = async (page = 1, size = 200) => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    const res = await fetch(`https://hivehub.mahitechnocrafts.in/api/my-products/${productId}`, {
+    const res = await fetch(`http://localhost:8000/api/my-products/${productId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
