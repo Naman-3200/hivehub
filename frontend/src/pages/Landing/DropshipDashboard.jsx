@@ -161,7 +161,7 @@
 //   // Generate local store URL
 //   const generateStoreUrl = (storeName) => {
 //     const storeId = storeName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-//     return `https://coruscating-macaron-acc30a.netlify.app/store/${storeId}`;
+//     return `https://silly-mermaid-a30a37.netlify.app/store/${storeId}`;
 //   };
 
 //   // Generate dynamic website content
@@ -1890,7 +1890,7 @@ const fetchStores = async () => {
     const storeId = `${newStore.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
 
 
-    return `https://coruscating-macaron-acc30a.netlify.app/store/${storeId}`;
+    return `https://silly-mermaid-a30a37.netlify.app/store/${storeId}`;
   };
 
   const createStore = async () => {
