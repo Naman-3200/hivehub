@@ -19,12 +19,17 @@ export default function Login() {
       const res = await api.post("/user/login", data);
       const token = res.data?.token;
       const user = res.data?.user;
+
+      console.log(res.data, "res.data");
+      console.log("token", token);
+      console.log(user, "user");
+      
       if (token) {
         localStorage.setItem("token", token);
         if (user) {
           localStorage.setItem("role", user.role);
         }
-        navigate("/user-dashboard");
+        navigate("/dashboard", { replace: true });
       }
     } catch (err) {
       console.error(err);

@@ -10,6 +10,7 @@ import passport from "./config/passport.js";
 import userRoutes from "./routes/user.route.js";
 import productRoutes from "./routes/productRoutes.js";
 import authRoutes from "./routes/auth.route.js";
+import storeRoutes from "./routes/store.route.js";
 
 const app = express();
 
@@ -41,8 +42,24 @@ app.use(cookieParser());
 app.use(passport.initialize());
 // app.use(passport.session());
 
+const requestLogger = (req, res, next) => {
+  console.log(`🌐 REQUEST: ${req.method} ${req.url}`);
+  console.log(`🌐 Headers:`, req.headers);
+  console.log(`🌐 Body:`, req.body);
+  console.log(`🌐 Query:`, req.query);
+  console.log(`🌐 Cookies:`, req.cookies);
+  console.log('🌐 =====================================');
+  next();
+};
+
+// Add this BEFORE your route definitions in app.js
+app.use(requestLogger);
+
+
 app.use("/user", userRoutes);
 app.use("/api", productRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/stores", storeRoutes);
+
 
 export default app;
