@@ -12,8 +12,8 @@ const GOOGLE_CLIENT_SECRET =
 passport.use(
   new GoogleStrategy(
     {
-      clientID: GOOGLE_CLIENT_ID,
-      clientSecret: GOOGLE_CLIENT_SECRET,
+      clientID: "428824054545-ihhmcn1j0v4tc70ot41jpo3efvs0jo61.apps.googleusercontent.com",
+      clientSecret: "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",
       callbackURL: "/api/auth/google/callback",
     },
     async (accessToken, refreshToken, profile, done) => {
