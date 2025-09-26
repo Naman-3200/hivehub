@@ -3,11 +3,11 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import User from "../model/user.model.js";
 
 // Fallback values for testing (remove after fixing env loading)
-const GOOGLE_CLIENT_ID =
+const GOOGLE_CLIENT_ID = 
   process.env.GOOGLE_CLIENT_ID ||
-  "1039448541732-g5bdhva6b1pd9aoflb5ag8t87570oa5b.apps.googleusercontent.com";
+  "428824054545-ihhmcn1j0v4tc70ot41jpo3efvs0jo61.apps.googleusercontent.com";
 const GOOGLE_CLIENT_SECRET =
-  process.env.GOOGLE_CLIENT_SECRET || "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";
+  process.env.GOOGLE_CLIENT_SECRET || "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";
 
 passport.use(
   new GoogleStrategy(
