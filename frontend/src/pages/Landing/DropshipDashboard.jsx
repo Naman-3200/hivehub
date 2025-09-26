@@ -1907,7 +1907,7 @@ const fetchStores = async () => {
         created: new Date().toLocaleDateString()
       };
       const savedStore = await saveStoreToBackend(store);
-      console.log("Saved store from backend:", savedStore);
+      // console.log("Saved store from backend:", savedStore);
       if (savedStore) {
       setStores([...stores, savedStore]);  // ✅ sync local state with backend response
       setSelectedStore(savedStore);
