@@ -38,11 +38,17 @@ export default function Login() {
   }
 
   // Add Google OAuth handler
-  const handleGoogleLogin = () => {
-    window.location.href = `${
-      import.meta.env.VITE_API_URL || "https://hivehub-1.onrender.com"
-    }/api/auth/google`;
-  };
+  // const handleGoogleLogin = () => {
+  //   window.location.href = `${
+  //     import.meta.env.VITE_API_URL || "https://hivehub-1.onrender.com"
+  //   }/api/auth/google`;
+  // };
+
+  const BASE_URL = import.meta.env.VITE_API_URL || "https://hivehub-1.onrender.com";
+
+const handleGoogleLogin = () => {
+  window.location.href = `${BASE_URL}/api/auth/google`;
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
