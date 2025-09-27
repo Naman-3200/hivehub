@@ -2245,6 +2245,10 @@ const publishProduct = async (product) => {
               <button onClick={() => setCurrentView('stores')} className={`px-3 py-2 text-sm font-medium ${currentView === 'stores' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>Stores</button>
               <button onClick={() => setCurrentView('products')} className={`px-3 py-2 text-sm font-medium ${currentView === 'products' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>Products</button>
               <button onClick={() => setCurrentView('inventory')} className={`px-3 py-2 text-sm font-medium ${currentView === 'inventory' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>Inventory</button>
+              <button onClick={() => setCurrentView('notifications')} className={`px-3 py-2 text-sm font-medium ${currentView === 'notifications' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>Notifications</button>
+              <button onClick={() => setCurrentView('settings')} className={`px-3 py-2 text-sm font-medium ${currentView === 'settings' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>Settings</button>
+              <button onClick={() => setCurrentView('community')} className={`px-3 py-2 text-sm font-medium ${currentView === 'community' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>Community</button>
+
             </nav>
           </div>
         </div>
@@ -2524,6 +2528,103 @@ const publishProduct = async (product) => {
             )}
           </div>
         )}
+
+        {currentView === 'orders' && (
+  <div>
+    <h1 className="text-2xl font-bold text-gray-900 mb-4">Orders</h1>
+    <p className="text-gray-600 mb-6">Here’s your order summary</p>
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="bg-white p-6 rounded-lg shadow">
+        <p className="text-sm text-gray-600">Total Orders</p>
+        <p className="text-2xl font-bold text-gray-900">120</p>
+      </div>
+      <div className="bg-white p-6 rounded-lg shadow">
+        <p className="text-sm text-gray-600">Paid</p>
+        <p className="text-2xl font-bold text-green-600">95</p>
+      </div>
+      <div className="bg-white p-6 rounded-lg shadow">
+        <p className="text-sm text-gray-600">Unpaid</p>
+        <p className="text-2xl font-bold text-red-600">25</p>
+      </div>
+      <div className="bg-white p-6 rounded-lg shadow">
+        <p className="text-sm text-gray-600">Refunded</p>
+        <p className="text-2xl font-bold text-orange-600">5</p>
+      </div>
+    </div>
+  </div>
+        )}
+
+        {currentView === 'notifications' && (
+  <div>
+    <h1 className="text-2xl font-bold text-gray-900 mb-4">Notifications</h1>
+    <div className="space-y-4">
+      <div className="bg-white p-4 rounded-lg shadow">
+        <p className="font-medium text-gray-900">📦 Your order #1234 has been shipped</p>
+        <p className="text-sm text-gray-600">2 hours ago</p>
+      </div>
+      <div className="bg-white p-4 rounded-lg shadow">
+        <p className="font-medium text-gray-900">💳 Payment received for order #1229</p>
+        <p className="text-sm text-gray-600">Yesterday</p>
+      </div>
+      <div className="bg-white p-4 rounded-lg shadow">
+        <p className="font-medium text-gray-900">🎉 New feature update is available</p>
+        <p className="text-sm text-gray-600">2 days ago</p>
+      </div>
+    </div>
+  </div>
+        )}
+
+        {currentView === 'settings' && (
+  <div>
+    <h1 className="text-2xl font-bold text-gray-900 mb-6">Settings</h1>
+
+    <div className="bg-white p-6 rounded-lg shadow mb-8">
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Settings</h2>
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm text-gray-600">Name</label>
+          <input type="text" value="John Doe" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md" readOnly />
+        </div>
+        <div>
+          <label className="block text-sm text-gray-600">Email</label>
+          <input type="email" value="john@example.com" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md" readOnly />
+        </div>
+      </div>
+    </div>
+
+    <div className="bg-white p-6 rounded-lg shadow">
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">Subscription Plan</h2>
+      <p className="text-gray-700">Current Plan: <span className="font-medium">Pro</span></p>
+      <p className="text-gray-500 text-sm mt-2">Renews on: 12th Oct 2025</p>
+      <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Upgrade Plan</button>
+    </div>
+  </div>
+        )}
+
+        {currentView === 'community' && (
+  <div>
+    <h1 className="text-2xl font-bold text-gray-900 mb-6">Community</h1>
+
+    
+    <div className="bg-white p-4 rounded-lg shadow mb-6">
+      <textarea placeholder="What's on your mind?" className="w-full border rounded-md p-3 text-gray-700"></textarea>
+      <button className="mt-3 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Post</button>
+    </div>
+
+    
+    <div className="space-y-4">
+      <div className="bg-white p-4 rounded-lg shadow">
+        <p className="font-medium text-gray-900">🚀 Alex Johnson</p>
+        <p className="text-gray-700 mt-2">Just launched my first store on DropShip Pro!</p>
+      </div>
+      <div className="bg-white p-4 rounded-lg shadow">
+        <p className="font-medium text-gray-900">💡 Sarah Lee</p>
+        <p className="text-gray-700 mt-2">Does anyone have tips on increasing store traffic?</p>
+      </div>
+    </div>
+  </div>
+        )}
+
       </main>
 
       {showProductModal && selectedProduct && (
