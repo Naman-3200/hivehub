@@ -14,7 +14,7 @@ passport.use(
     {
       clientID: "428824054545-ihhmcn1j0v4tc70ot41jpo3efvs0jo61.apps.googleusercontent.com",
       clientSecret: "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",
-      callbackURL: "https://hivehub-1.onrender.com/api/auth/google/callback",
+      callbackURL: "https://hivehub-y2u8.onrender.com/api/auth/google/callback",
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
