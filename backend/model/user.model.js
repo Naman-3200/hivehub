@@ -1,7 +1,7 @@
 // models/user.model.js
 import mongoose from "mongoose";
 
-const myProductSchema = new mongoose.Schema(
+export const myProductSchema = new mongoose.Schema(
   {
     productId: { type: String, required: true }, // CJ pid
     name: String,
@@ -12,7 +12,7 @@ const myProductSchema = new mongoose.Schema(
         storeId: { type: String, required: true },
         published: { type: Boolean, default: false }
   },
-  { _id: false, timestamps: true }
+  { _id: false ,timestamps: true }
 );
 
 const userSchema = new mongoose.Schema(

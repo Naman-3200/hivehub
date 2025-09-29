@@ -2,11 +2,143 @@ import axios from "axios";
 import User from "../model/user.model.js";
 import WebProduct from "../model/webproduct.model.js";
 import mongoose from "mongoose";
+import StoreProduct from "../model/product.model.js";
 
 /**
  * GET /api/products
  * Proxies CJ Dropshipping product list to the frontend using Axios
  */
+
+
+
+// PUT /api/my-products/:productId
+export const updateMyProduct = async (req, res) => {
+  try {
+    console.log("REQ BODY:", req.user);
+console.log("REQ FILE:", req.file);
+
+    const userId = req.user.id;
+    const { productId, name, price, sellingPrice, quantity, description, category } = req.body;
+    const image = req.file ? `/uploads/${req.file.filename}` : undefined;
+
+    if (!productId ) {
+      return res.status(400).json({ error: "productId is required" });
+    }
+
+    const updateFields = { name, price, sellingPrice, quantity, description, category };
+    if (image) updateFields.image = image;
+
+    const updatedUser = await User.findOneAndUpdate(
+  { _id: userId, "myProducts.productId": productId },
+  { $set: Object.fromEntries(Object.entries(updateFields).map(([k, v]) => [`myProducts.$.${k}`, v])) },
+  { new: true }
+);
+
+await StoreProduct.findOneAndUpdate(
+  { productId, userId }, // 👈 removed storeId from query
+  { $set: updateFields },
+  { upsert: true, new: true }
+);
+
+
+    console.log("Updated User:", updatedUser);
+
+    if (!updatedUser) {
+  return res.status(404).json({ error: "Product not found for this user" });
+}
+
+
+    res.json({ success: true, myProducts: updatedUser.myProducts });
+  } catch (err) {
+    console.error("Update My Product error:", err);
+    res.status(500).json({ error: "Failed to update product" });
+  }
+};
+
+
+
+// POST /api/my-products/bulk
+export const bulkAddToMyProducts = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { products, storeId } = req.body;
+
+    if (!Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({ error: "Products array is required" });
+    }
+
+    // Attach storeId + published true by default
+    const normalizedProducts = products.map((p) => ({
+      productId: p.productId || new mongoose.Types.ObjectId().toString(), // generate if missing
+      name: p.name || "Unnamed Product",
+      price: parseFloat(p.price) || 0,
+      image: p.image || "https://via.placeholder.com/300x300",
+      category: p.category || "General",
+      storeId: storeId || null,
+      published: true,
+    }));
+
+    // 1. Push into User.myProducts
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $push: { myProducts: { $each: normalizedProducts } } },
+      { new: true, select: "myProducts" }
+    );
+
+    // 2. Upsert into WebProduct collection
+    for (const p of normalizedProducts) {
+      await WebProduct.findOneAndUpdate(
+        { productId: p.productId, storeId: p.storeId },
+        { ...p, userId },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+    }
+
+    res.json({ success: true, myProducts: updatedUser.myProducts });
+  } catch (err) {
+    console.error("Bulk add error:", err);
+    res.status(500).json({ error: "Failed to add products in bulk" });
+  }
+};
+
+
+export const updateTheProductStore = async (req, res) => {
+  try {
+    console.log("req body", req.params.productId)
+    const { productId } = req.params;
+    const userId = req.user.id; // comes from authenticateToken middleware
+    
+    const { name, description, price, image, category } = req.body;
+
+    if (!productId) {
+      return res.status(400).json({ error: "productId is required" });
+    }
+
+    // find product by id + user (so user can only edit their products)
+    const product = await StoreProduct.find().where({ productId }).exec();
+
+    console.log("Found product:", product);
+
+    if (!product) {
+      return res.status(401).json({ error: "Product not found"})
+    }
+
+    // update fields
+    product.name = name || product.name;
+    product.description = description || product.description;
+    product.price = price ?? product.price;
+    product.image = image || product.image;
+    product.category = category || product.category;
+
+    await product.save();
+
+    res.json({ success: true, message: "Product updated", product });
+  } catch (error) {
+    console.error("❌ Error updating product:", error);
+    res.status(500).json({ error: "Server error while updating product" });
+  }
+};
+
 export const getProducts = async (req, res) => {
   try {
     // Allow optional pageNum & pageSize query parameters
@@ -25,8 +157,11 @@ export const getProducts = async (req, res) => {
       }
     );
 
+    
     // Forward CJ API response to frontend
     res.json(response.data);
+
+
   } catch (err) {
     console.error("CJ proxy error:", err.message);
     const status = err.response?.status || 500;
@@ -181,7 +316,7 @@ export const removeFromMyProducts = async (req, res) => {
       return res.status(400).json({ error: "productId is required" });
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
+    const updatedUser = await WebProduct.findByIdAndUpdate(
       userId,
       { $pull: { myProducts: { productId } } },
       { new: true, select: "myProducts" }

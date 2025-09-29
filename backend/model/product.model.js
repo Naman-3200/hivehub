@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import {myProductSchema} from "./user.model.js";
+
 
 const StoreProductSchema = new mongoose.Schema(
   {
@@ -11,10 +13,11 @@ const StoreProductSchema = new mongoose.Schema(
     name: String,
     image: String,
     price: String,
-        category: String,
-
-        storeId: { type: String, required: true },
-
+    category: String,
+    sellingPrice: String,
+    quantity: Number,
+    storeId: { type: String },
+    published: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

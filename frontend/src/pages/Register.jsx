@@ -40,7 +40,7 @@ export default function Register() {
 
   const handleGoogleSignup = () => {
     window.location.href = `${
-      import.meta.env.VITE_API_URL || "https://hivehub-1.onrender.com"
+      import.meta.env.VITE_API_URL || "https://hivehub-y2u8.onrender.com"
     }/api/auth/google`;
   };
 
