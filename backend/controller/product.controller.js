@@ -3,6 +3,8 @@ import User from "../model/user.model.js";
 import WebProduct from "../model/webproduct.model.js";
 import mongoose from "mongoose";
 import StoreProduct from "../model/product.model.js";
+import { v2 as cloudinary } from "cloudinary";
+import fs from "fs";
 
 /**
  * GET /api/products
@@ -10,23 +12,39 @@ import StoreProduct from "../model/product.model.js";
  */
 
 
+cloudinary.config({
+  cloud_name: "dp08sxzyr",
+  api_key: "224272563168335",
+  api_secret: "idMP342ub8UsIGv86NajShDrgtc"
+});
+
 
 // PUT /api/my-products/:productId
 export const updateMyProduct = async (req, res) => {
   try {
-    console.log("REQ BODY:", req.user);
-console.log("REQ FILE:", req.file);
+
 
     const userId = req.user.id;
-    const { productId, name, price, sellingPrice, quantity, description, category } = req.body;
-    const image = req.file ? `/uploads/${req.file.filename}` : undefined;
+    const { productId, name, price, description, category, sellingPrice, quantity, } = req.body;
+    let imageUrl;
+
+    if (req.file) {
+      // Upload to cloudinary
+      const uploadRes = await cloudinary.uploader.upload(req.file.path, {
+        folder: "my-products"
+      });
+      imageUrl = uploadRes.secure_url;
+
+      // remove local file after upload
+      fs.unlinkSync(req.file.path);
+    }
 
     if (!productId ) {
       return res.status(400).json({ error: "productId is required" });
     }
 
     const updateFields = { name, price, sellingPrice, quantity, description, category };
-    if (image) updateFields.image = image;
+    if (imageUrl) updateFields.image = imageUrl;
 
     const updatedUser = await User.findOneAndUpdate(
   { _id: userId, "myProducts.productId": productId },
@@ -174,7 +192,17 @@ export const getProducts = async (req, res) => {
 export const addToMyProducts = async (req, res) => {
   try {
     const userId = req.user.id; // from auth middleware
-    const { productId, name, price, image, category, storeId } = req.body;
+    const { productId, name, price, category, storeId, sellingPrice, quantity } = req.body;
+    let imageUrl;
+
+    // If image file is provided, upload to cloudinary
+    if (req.file) {
+      const uploadRes = await cloudinary.uploader.upload(req.file.path, {
+        folder: "my-products",
+      });
+      imageUrl = uploadRes.secure_url;
+      fs.unlinkSync(req.file.path); // delete local temp file
+    }
 
     if (!productId || !storeId) {
       return res.status(400).json({ error: "productId and storeId are required" });
@@ -182,11 +210,32 @@ export const addToMyProducts = async (req, res) => {
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { $push: { myProducts: { productId, name, price, image, category, storeId, published: true } } },
+      { $push: { myProducts: { productId, name, price, mage: imageUrl, category, storeId, published: true, sellingPrice, quantity } } },
       { new: true, select: "myProducts" }
     );
 
-    // 2. Add/Update in WebProduct collection
+
+    // 2. Add/Update in StoreProduct collection
+    await StoreProduct.findOneAndUpdate(
+      { productId, storeId, userId },
+      {
+        $set: {
+          userId,
+          productId,
+          storeId,
+          name,
+          price,
+          image: imageUrl,
+          category,
+          sellingPrice,   // ✅ new
+          quantity,       // ✅ new
+          published: true,
+        },
+      },
+      { upsert: true, new: true }
+    );
+
+    // 3. Add/Update in WebProduct collection
     await WebProduct.findOneAndUpdate(
       { productId, storeId },
       {
@@ -196,8 +245,10 @@ export const addToMyProducts = async (req, res) => {
           storeId,
           name,
           price,
-          image,
+          image: imageUrl,
           category,
+          sellingPrice,   
+          quantity,  
           published: true
         }
       },
@@ -296,10 +347,44 @@ export const getPublishedProducts = async (req, res) => {
   }
 };
 
+// export const getMyProducts = async (req, res) => {
+//   try {
+//     const user = await User.findById(req.user.id).select("myProducts");
+//     res.json({ success: true, myProducts: user.myProducts });
+//   } catch (err) {
+//     console.error("Get My Products error:", err);
+//     res.status(500).json({ error: "Failed to fetch products" });
+//   }
+// };
+
 export const getMyProducts = async (req, res) => {
   try {
+    // Get base list from User table
     const user = await User.findById(req.user.id).select("myProducts");
-    res.json({ success: true, myProducts: user.myProducts });
+    const baseProducts = user.myProducts || [];
+
+    // Get overrides (edited products) from StoreProduct
+    const storeProducts = await StoreProduct.find({ userId: req.user.id });
+
+    // Create a map for quick lookup of overrides by productId
+    const overridesMap = {};
+    storeProducts.forEach(sp => {
+      overridesMap[sp.productId] = sp.toObject();
+    });
+
+    // Merge base products with overrides
+    const mergedProducts = baseProducts.map(bp => {
+      const override = overridesMap[bp.productId];
+      if (override) {
+        return {
+          ...bp.toObject?.() ?? bp, // ensure plain object
+          ...override, // override fields (sellingPrice, quantity, etc.)
+        };
+      }
+      return bp.toObject?.() ?? bp;
+    });
+
+    res.json({ success: true, myProducts: mergedProducts });
   } catch (err) {
     console.error("Get My Products error:", err);
     res.status(500).json({ error: "Failed to fetch products" });
@@ -310,17 +395,21 @@ export const getMyProducts = async (req, res) => {
 export const removeFromMyProducts = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { productId } = req.params; // productId from URL
+    const { productId } = req.params;
 
     if (!productId) {
       return res.status(400).json({ error: "productId is required" });
     }
 
-    const updatedUser = await WebProduct.findByIdAndUpdate(
+    // 1. Remove from User.myProducts
+    const updatedUser = await User.findByIdAndUpdate(
       userId,
       { $pull: { myProducts: { productId } } },
       { new: true, select: "myProducts" }
     );
+
+    // 2. Also remove from StoreProduct
+    await StoreProduct.findOneAndDelete({ userId, productId });
 
     res.json({ success: true, myProducts: updatedUser.myProducts });
   } catch (err) {

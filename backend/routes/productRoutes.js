@@ -25,7 +25,7 @@ router.put("/my-products/:productId", authenticateToken, updateTheProductStore);
 
 // router.put("/my-products/:productId", authenticateToken, updateMyProduct);
 router.post("/my-products/bulk", authenticateToken, bulkAddToMyProducts);
-router.post("/my-products", authenticateToken, addToMyProducts);
+router.post("/my-products", authenticateToken, upload.single("image"), addToMyProducts);
 router.get("/my-products", authenticateToken, getMyProducts);
 router.delete("/my-products/:productId", authenticateToken, removeFromMyProducts);
 

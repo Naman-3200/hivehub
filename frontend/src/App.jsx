@@ -12,6 +12,8 @@ import AuthFailure from "./pages/AuthFailure";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import DropshipDashboard from "./pages/Landing/DropshipDashboard";
+import StorePage from "./pages/Landing/StorePage"; 
+
 // import { monitorLocalStorage } from "./pages/monitorlocalStorage";
 function App() {
     // monitorLocalStorage();
@@ -19,6 +21,8 @@ function App() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/dashboard" element={<DropshipDashboard />} />
+      <Route path="/store/:slug" element={<StorePage />} />
+
             
 
       <Route

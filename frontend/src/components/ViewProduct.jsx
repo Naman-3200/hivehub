@@ -28,10 +28,10 @@ const ViewProduct = ({ product, onClose, fetchMyProducts, selectedStore, token }
             // storeId: selectedStore?.id
             productId: product.id,
           name: product.name,
-          price: product.price,
+          price: product.originalPrice,
           image: product.image,
           category: product.category,
-          sellingPrice: product.price * 1.5,
+          sellingPrice: product.price,
           quantity: 1,
           storeId: selectedStore?._id,
           published: true   // 👈 new line
