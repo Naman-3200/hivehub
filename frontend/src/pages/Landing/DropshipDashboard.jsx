@@ -12,7 +12,7 @@ const DropshipDashboard = () => {
   const [selectedStore, setSelectedStore] = useState(null);
   const [allProductsData, setAllProductsData] = useState([]);
   const [myProducts, setMyProducts] = useState([]);
-  // console.log("myproducts:", myProducts);
+  console.log("myproducts:", myProducts);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [activeTab, setActiveTab] = useState('trending');
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,7 +48,7 @@ const saveStoreToBackend = async (storeData) => {
     }
 
     console.log("Saving store data:", storeData);
-    const res = await fetch("https://hivehub-y2u8.onrender.com/api/stores", {
+    const res = await fetch("http://localhost:8000/api/stores", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -73,7 +73,7 @@ const saveStoreToBackend = async (storeData) => {
 const fetchStores = async () => {
   try {
     if (!token) return;
-    const res = await fetch("https://hivehub-y2u8.onrender.com/api/stores", {
+    const res = await fetch("http://localhost:8000/api/stores", {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!res.ok) throw new Error("Failed to fetch stores");
@@ -91,7 +91,7 @@ const fetchStores = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`https://hivehub-y2u8.onrender.com/api/products?pageNum=${page}&pageSize=${size}`);
+      const res = await fetch(`http://localhost:8000/api/products?pageNum=${page}&pageSize=${size}`);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
       const productsList = data?.data?.list ?? data?.list ?? [];
@@ -139,7 +139,7 @@ const fetchStores = async () => {
   const fetchMyProducts = async () => {
     if (!token) return;
     try {
-      const res = await fetch("https://hivehub-y2u8.onrender.com/api/my-products", {
+      const res = await fetch("http://localhost:8000/api/my-products", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch My Products");
@@ -203,7 +203,7 @@ const getProductsByCategory = (category) => {
     const storeId = `${newStore.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
 
 
-    return `https://hivehub-tr8u.vercel.app/store/${storeId}`;
+    return `http://localhost:5173/store/${storeId}`;
   };
 
   const createStore = async () => {
@@ -239,7 +239,7 @@ const getProductsByCategory = (category) => {
     }
       console.log("product", product);
       if (token) {
-        const response = await fetch('https://hivehub-y2u8.onrender.com/api/my-products', {
+        const response = await fetch('http://localhost:8000/api/my-products', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -280,7 +280,7 @@ const getProductsByCategory = (category) => {
 // const updateInventoryItem = async (productId, updates) => {
 //   try {
 //     if (token) {
-//       await fetch(`https://hivehub-y2u8.onrender.com/api/my-products/${productId}`, {
+//       await fetch(`http://localhost:8000/api/my-products/${productId}`, {
 //         method: 'PUT',
 //         headers: {
 //           'Authorization': `Bearer ${token}`,
@@ -302,7 +302,7 @@ const updateInventoryItem = async (productId, formData) => {
 }
 
     if (token) {
-      const res = await fetch(`https://hivehub-y2u8.onrender.com/api/my-products/update`, {
+      const res = await fetch(`http://localhost:8000/api/my-products/update`, {
         method: "PUT",
         headers: {
           'Authorization': `Bearer ${token}`
@@ -341,7 +341,7 @@ const publishProduct = async (product) => {
 
   try {
     if (token) {
-      const response = await fetch(`https://hivehub-y2u8.onrender.com/api/publish-to-website/${productIds}`, {
+      const response = await fetch(`http://localhost:8000/api/publish-to-website/${productIds}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -574,7 +574,7 @@ const publishProduct = async (product) => {
     });
     setStores(updatedStores);
   }
-}, [stores]);
+}, []);
 
 
 
@@ -1230,6 +1230,7 @@ const publishProduct = async (product) => {
 };
 
 const InventoryRow = ({ item, onUpdate, onPublish, generateWithAI }) => {
+  console.log("inventory item", item);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     name: item.name,
@@ -1237,6 +1238,8 @@ const InventoryRow = ({ item, onUpdate, onPublish, generateWithAI }) => {
     quantity: item.quantity,
     description: item.description
   });
+
+  console.log("edit data", editData);
 
   // const handleSave = () => {
   //   onUpdate(item.id, editData);
@@ -1375,7 +1378,7 @@ const InventoryRow = ({ item, onUpdate, onPublish, generateWithAI }) => {
         <div className="flex items-center space-x-2">
           <input
             type="number"
-            value={editData.sellingPrice}
+            value={editData.sellingPrice || editData.price + (editData.price * (30/100))}
             onChange={(e) => setEditData({ ...editData, sellingPrice: parseFloat(e.target.value) })}
             className="text-sm border rounded px-2 py-1 w-20"
             step="0.01"
@@ -1394,7 +1397,7 @@ const InventoryRow = ({ item, onUpdate, onPublish, generateWithAI }) => {
       <td className="px-6 py-4">
         <input
           type="number"
-          value={editData.quantity}
+          value={editData.quantity || 1}
           onChange={(e) => setEditData({ ...editData, quantity: parseInt(e.target.value) })}
           className="text-sm border rounded px-2 py-1 w-16"
         />
