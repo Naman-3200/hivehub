@@ -17,7 +17,7 @@ const ViewProduct = ({ product, onClose, fetchMyProducts, selectedStore, token }
     }
       console.log("product", product);
       if (token) {
-        const response = await fetch('http://localhost:8000/api/my-products', {
+        const response = await fetch('https://hivehub-y2u8.onrender.com/api/my-products', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,

@@ -34,7 +34,7 @@ const Hero = () => {
 
         {/* Email Signup */}
         <div className="mt-6 flex items-center justify-center gap-6 max-w-md mx-auto">
-            <button       onClick={() => navigate("/user-dashboard")}
+            <button       onClick={() => navigate("/dashboard")}
  className='cursor-pointer bg-violet-500 rounded-lg py-2 px-6 text-white font-semibold'>Start Free {">"}</button>
             <button className='cursor-pointer bg-violet-500 rounded-lg py-2 px-6 text-white font-semibold'>See Demo</button>
 
