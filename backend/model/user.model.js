@@ -8,9 +8,10 @@ export const myProductSchema = new mongoose.Schema(
     price: Number,
     image: String,
     category: String,
-
-        storeId: { type: String, required: true },
-        published: { type: Boolean, default: false }
+    sellingPrice: String,  
+    quantity: Number,      
+    storeId: { type: String, required: true },
+    published: { type: Boolean, default: false }
   },
   { _id: false ,timestamps: true }
 );

@@ -1,4 +1,5 @@
 import Store from "../model/store.model.js";
+import WebProduct from "../model/webproduct.model.js";
 
 // Create store
 export const createStore = async (req, res) => {
@@ -29,3 +30,32 @@ export const getStores = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to fetch stores" });
   }
 };
+
+
+export const getSlugStore = async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    // Find store by domain containing slug
+    const store = await Store.findOne({ domain: { $regex: slug, $options: "i" } });
+    if (!store) {
+      return res.status(404).json({ error: "Store not found" });
+    }
+
+    // Fetch products linked to this store
+    const products = await WebProduct.find({ storeId: store._id, published: true });
+
+    res.json({
+      success: true,
+      store: {
+        _id: store._id,
+        name: store.name,
+        domain: store.domain,
+        products,
+      },
+    });
+  } catch (err) {
+    console.error("Get store error:", err);
+    res.status(500).json({ error: "Failed to fetch store" });
+  }
+}

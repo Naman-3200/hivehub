@@ -10,6 +10,8 @@ const myProductSchema = new mongoose.Schema(
     image: String,
     category: String,
     storeId: String, 
+    sellingPrice: String,
+    quantity: Number,
     published: { type: Boolean, default: false },
   },
   { timestamps: true }

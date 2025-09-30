@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import axios from "axios";
+
 import { 
   Store, Plus, Search, TrendingUp, Calendar, DollarSign, Package, Edit3, Eye, ExternalLink,
   Wand2, ShoppingCart, Star, X, Check, Upload, Globe, Settings, Loader, Copy, Share2
@@ -37,6 +39,20 @@ const [isEditing, setIsEditing] = useState(false);
 
 
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem("token") : null;
+
+
+
+  const handleDelete = async (productId, product) => {
+    try {
+      console.log("product of the product", product)
+      await axios.delete(`http://localhost:8000/api/my-products/${productId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchMyProducts(); // refresh after delete
+    } catch (err) {
+      console.error("Delete product error:", err);
+    }
+  };
 
 
   // Save new store to backend
@@ -102,7 +118,7 @@ const fetchStores = async () => {
         return;
       }
 
-      const mappedProducts = data.data.list.map((item, index) => {
+      const mappedProducts = data.data.list.map((item) => {
         const daysOld = (Date.now() - item.createTime) / (1000 * 60 * 60 * 24);
         const velocity = (item.listedNum || 0) / Math.max(daysOld, 1);
 
@@ -175,7 +191,9 @@ const getProductsByCategory = (category) => {
   const productsCopy = [...allProductsData]; // avoid mutating
   switch (category) {
     case 'trending':
-      return productsCopy.filter(p => p.trending).slice(0, 20);
+  return productsCopy
+    .sort((a, b) => b.reviews - a.reviews) // or b.rating - a.rating, or b.sales - a.sales
+    .slice(0, 20);
     case 'revenue':
       return productsCopy.sort((a, b) => b.price - a.price).slice(0, 20);
     case 'new':
@@ -203,7 +221,7 @@ const getProductsByCategory = (category) => {
     const storeId = `${newStore.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
 
 
-    return `http://localhost:5173/store/${storeId}`;
+    return `https://hivehub-tr8u.vercel.app/store/${storeId}`;
   };
 
   const createStore = async () => {
@@ -347,7 +365,7 @@ const publishProduct = async (product) => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ published: true, storeId: selectedStore?.id })
+        body: JSON.stringify({ published: true, storeId: (selectedStore?._id || selectedStore.id) })
       });
       console.log("Publish response status:", response.status);
 
@@ -564,17 +582,29 @@ const publishProduct = async (product) => {
   };
 
     useEffect(() => {
-  if (stores && stores.length > 0) {
-    const updatedStores = stores.map((store) => {
-      // if blob already created, keep it
-      if (store.localUrl && store.localUrl.startsWith("blob:")) return store;
+  // if (stores && stores.length > 0) {
+  //   const updatedStores = stores.map((store) => {
+  //     // if blob already created, keep it
+  //     if (store.localUrl && store.localUrl.startsWith("blob:")) return store;
 
+  //     const blobUrl = createLocalWebsite(store);
+  //     return { ...store, localUrl: blobUrl };
+  //   });
+  //   setStores(updatedStores);
+  // }
+
+  if (stores && stores.length > 0) {
+    const needsUpdate = stores.some(store => !store.localUrl?.startsWith("blob:"));
+    if (!needsUpdate) return; // ✅ Already processed
+
+    const updatedStores = stores.map(store => {
+      if (store.localUrl?.startsWith("blob:")) return store;
       const blobUrl = createLocalWebsite(store);
       return { ...store, localUrl: blobUrl };
     });
     setStores(updatedStores);
   }
-}, []);
+}, [stores]);
 
 
 
@@ -583,7 +613,7 @@ const publishProduct = async (product) => {
 
   
 
-    window.open(store.localUrl, '_blank');
+    window.open(store.domain, '_blank');
   };
 
   const filteredProducts = allProductsData.filter(product =>
@@ -732,10 +762,7 @@ const publishProduct = async (product) => {
                         <p className="text-sm text-gray-600 capitalize">{store.category}</p>
                       </div>
                       <button
-                        onClick={() => {
-                          setSelectedStore(store);
-                          setCurrentView("products");
-                        }}
+                        onClick={() => openStoreWebsite(store)}
                         className="text-blue-600 hover:text-blue-800"
                       >
                         <ExternalLink className="h-5 w-5" />
@@ -743,36 +770,82 @@ const publishProduct = async (product) => {
                     </div>
 
                     {/* Store Domain + Copy + Share */}
+                    
                     <div className="mb-4">
-                      <p className="text-sm text-gray-800 font-medium truncate">
-                        {store.localUrl}
-                      </p>
-                      <div className="flex gap-2 mt-2">
-                        <button
-                          onClick={() => navigator.clipboard.writeText(store.localUrl)}
-                          className="flex items-center text-xs text-gray-600 hover:text-gray-900"
-                        >
-                          <Copy className="h-4 w-4 mr-1" />
-                          Copy
-                        </button>
-                        <button
-                          onClick={() =>
-                            navigator.share
-                              ? navigator.share({
-                                  title: store.name,
-                                  url: store.localUrl.startsWith("http")
-                                    ? store.localUrl
-                                    : `https://${store.localUrl}`,
-                                })
-                              : alert("Sharing not supported on this device")
-                          }
-                          className="flex items-center text-xs text-gray-600 hover:text-gray-900"
-                        >
-                          <Share2 className="h-4 w-4 mr-1" />
-                          Share
-                        </button>
-                      </div>
-                    </div>
+  <p className="text-sm text-gray-800 font-medium truncate">
+    {store.domain}
+  </p>
+  <div className="flex gap-2 mt-2">
+    {/* Copy button */}
+    <button
+      onClick={() => {
+        const copyUrl = store.domain.startsWith("http")
+          ? store.domain
+          : `${window.location.origin}/${store.domain.replace(/^\//, "")}`;
+
+        navigator.clipboard
+          .writeText(copyUrl)
+          .then(() => alert("Copied to clipboard!"))
+          .catch(() => alert("Failed to copy"));
+      }}
+      className="flex items-center text-xs text-gray-600 hover:text-gray-900"
+    >
+      <Copy className="h-4 w-4 mr-1" />
+      Copy
+    </button>
+
+    {/* Share button */}
+    <button
+      onClick={() => {
+        if (navigator.share) {
+          const shareUrl = store.domain.startsWith("http")
+            ? store.domain
+            : `${window.location.origin}/${store.domain.replace(/^\//, "")}`;
+
+          navigator
+            .share({
+              title: store.name || "My Store",
+              url: shareUrl,
+            })
+            .catch((err) => console.error("Share failed:", err));
+        } else {
+          alert("Sharing not supported on this device");
+        }
+      }}
+      className="flex items-center text-xs text-gray-600 hover:text-gray-900"
+    >
+      <Share2 className="h-4 w-4 mr-1" />
+      Share
+    </button>
+  </div>
+</div>
+
+
+
+{/* <button
+  onClick={() => {
+    const shareUrl = store.domain || store.localUrl; // prefer domain if available
+    if (navigator.share && shareUrl.startsWith("http")) {
+      navigator
+        .share({
+          title: store.name,
+          url: shareUrl,
+        })
+        .catch((err) => console.error("Share failed:", err));
+    } else {
+      navigator.clipboard
+        .writeText(shareUrl)
+        .then(() => alert("Link copied!"))
+        .catch(() => alert("Failed to copy link"));
+    }
+  }}
+  className="flex items-center text-xs text-gray-600 hover:text-gray-900"
+>
+  <Share2 className="h-4 w-4 mr-1" />
+  Share
+</button> */}
+
+
 
                     {/* Actions */}
                     <div className="flex justify-between items-center">
@@ -982,7 +1055,7 @@ const publishProduct = async (product) => {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {myProducts.map(item => (
-                        <InventoryRow key={item._id || item.productId} item={item} onUpdate={updateInventoryItem} onPublish={() => publishProduct(item)} generateWithAI={generateWithAI} />
+                        <InventoryRow key={item._id || item.productId} item={item} onDelete={handleDelete} onUpdate={updateInventoryItem} onPublish={() => publishProduct(item)} generateWithAI={generateWithAI} />
                       ))}
                     </tbody>
                   </table>
@@ -1175,6 +1248,7 @@ const publishProduct = async (product) => {
     token={token}
     selectedStore={selectedStore}
     selectedProduct={selectedProduct} // can be null for add mode
+    isEditing={isEditing}
   />
 )}
 
@@ -1229,7 +1303,7 @@ const publishProduct = async (product) => {
   );
 };
 
-const InventoryRow = ({ item, onUpdate, onPublish, generateWithAI }) => {
+const InventoryRow = ({ item, onUpdate, onPublish, generateWithAI, onDelete }) => {
   console.log("inventory item", item);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
@@ -1245,6 +1319,8 @@ const InventoryRow = ({ item, onUpdate, onPublish, generateWithAI }) => {
   //   onUpdate(item.id, editData);
   //   setIsEditing(false);
   // };
+
+    
 
   const handleSave = () => {
   const formData = new FormData();
@@ -1378,7 +1454,7 @@ const InventoryRow = ({ item, onUpdate, onPublish, generateWithAI }) => {
         <div className="flex items-center space-x-2">
           <input
             type="number"
-            value={editData.sellingPrice || editData.price + (editData.price * (30/100))}
+            value={editData.sellingPrice }
             onChange={(e) => setEditData({ ...editData, sellingPrice: parseFloat(e.target.value) })}
             className="text-sm border rounded px-2 py-1 w-20"
             step="0.01"
@@ -1397,7 +1473,7 @@ const InventoryRow = ({ item, onUpdate, onPublish, generateWithAI }) => {
       <td className="px-6 py-4">
         <input
           type="number"
-          value={editData.quantity || 1}
+          value={editData.quantity }
           onChange={(e) => setEditData({ ...editData, quantity: parseInt(e.target.value) })}
           className="text-sm border rounded px-2 py-1 w-16"
         />
@@ -1458,6 +1534,13 @@ const InventoryRow = ({ item, onUpdate, onPublish, generateWithAI }) => {
         )}
         <button className="text-gray-400 hover:text-gray-600">
           <Eye className="h-4 w-4" />
+        </button>
+        <button
+          onClick={() => onDelete(item.productId, item)}  // ✅ use onDelete
+          className="text-red-600 hover:text-red-900"
+          title="Delete product"
+        >
+          <X className="h-4 w-4" />
         </button>
       </td>
     </tr>
