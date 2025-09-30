@@ -48,8 +48,8 @@ const AddProductModal = ({
   const addOrUpdateProductAPI = async (product) => {
     try {
       const url = isEditing
-        ? `https://hivehub-y2u8.onrender.com/api/my-products/${selectedProduct.id}` // PUT for edit
-        : "https://hivehub-y2u8.onrender.com/api/my-products"; // POST for new
+        ? `http://localhost:8000/api/my-products/${selectedProduct.id}` // PUT for edit
+        : "http://localhost:8000/api/my-products"; // POST for new
 
       const method = isEditing ? "PUT" : "POST";
 
@@ -92,7 +92,7 @@ const AddProductModal = ({
         
       // EDIT PRODUCT (PUT)
       
-      const res = await fetch(`https://hivehub-y2u8.onrender.com/api/my-products/${selectedProduct.id}`, {
+      const res = await fetch(`http://localhost:8000/api/my-products/${selectedProduct.id}`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -136,7 +136,7 @@ const AddProductModal = ({
               productId: row.productId || Date.now().toString(),
             }));
 
-            await fetch("https://hivehub-y2u8.onrender.com/api/my-products/bulk", {
+            await fetch("http://localhost:8000/api/my-products/bulk", {
               method: "POST",
               headers: {
                 "Authorization": `Bearer ${token}`,

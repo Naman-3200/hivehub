@@ -17,7 +17,7 @@ const ViewProduct = ({ product, onClose, fetchMyProducts, selectedStore, token }
     }
       console.log("product", product);
       if (token) {
-        const response = await fetch('https://hivehub-y2u8.onrender.com/api/my-products', {
+        const response = await fetch('http://localhost:8000/api/my-products', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -25,14 +25,14 @@ const ViewProduct = ({ product, onClose, fetchMyProducts, selectedStore, token }
           },
           body: JSON.stringify({
             // productId: product.id,
-            // sellingPrice: product.price * 1.5,
-            // quantity: 10,
             // storeId: selectedStore?.id
             productId: product.id,
           name: product.name,
           price: product.price,
           image: product.image,
           category: product.category,
+          sellingPrice: product.price * 1.5,
+          quantity: 1,
           storeId: selectedStore?._id,
           published: true   // 👈 new line
 
