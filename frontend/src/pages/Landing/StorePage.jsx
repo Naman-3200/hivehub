@@ -10,7 +10,7 @@ const StorePage = () => {
   useEffect(() => {
     const fetchStore = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/stores/${slug}`);
+        const res = await fetch(`https://hivehub-y2u8.onrender.com/api/stores/${slug}`);
         if (!res.ok) throw new Error("Failed to fetch store");
         const data = await res.json();
         setStoreData(data.store);

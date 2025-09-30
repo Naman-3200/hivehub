@@ -9,7 +9,7 @@ export default function ForgotPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("http://localhost:8000/api/auth/forgot-password", { email });
+      await axios.post("https://hivehub-y2u8.onrender.com/api/auth/forgot-password", { email });
       setSubmitted(true);
     } catch (err) {
       console.error("Forgot password error:", err);

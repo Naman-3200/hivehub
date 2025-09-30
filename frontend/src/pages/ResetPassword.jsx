@@ -33,7 +33,7 @@ export default function ResetPassword() {
 
     try {
       console.log("📨 Sending reset request:", { token, newPassword });
-      const res = await axios.post("http://localhost:8000/api/auth/reset-password", {
+      const res = await axios.post("https://hivehub-y2u8.onrender.com/api/auth/reset-password", {
         token,
         newPassword,
       });
