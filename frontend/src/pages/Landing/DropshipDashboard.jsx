@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import {useNavigate} from 'react-router-dom';
 import axios from "axios";
+import { generateWebsiteContent } from "../generateWebsiteContent.jsx";
+
 
 import { 
   Store, Plus, Search, TrendingUp, Calendar, DollarSign, Package, Edit3, Eye, ExternalLink,
-  Wand2, ShoppingCart, Star, X, Check, Upload, Globe, Settings, Loader, Copy, Share2
+  Wand2, ShoppingCart, Star, X, Check, Upload, Globe, Settings, Loader, Copy, Share2, ChevronDown
 } from 'lucide-react';
 import AddProductModal from '../../components/AddProductModal';
 import ViewProduct from '../../components/ViewProduct';
@@ -11,10 +14,11 @@ import ViewProduct from '../../components/ViewProduct';
 const DropshipDashboard = () => {
   const [currentView, setCurrentView] = useState('dashboard');
   const [stores, setStores] = useState([]);
+  const [userId, setUserId] = useState(null);
+  const [newArrivals, setNewArrivals] = useState([]);
   const [selectedStore, setSelectedStore] = useState(null);
   const [allProductsData, setAllProductsData] = useState([]);
   const [myProducts, setMyProducts] = useState([]);
-  console.log("myproducts:", myProducts);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [activeTab, setActiveTab] = useState('trending');
   const [searchQuery, setSearchQuery] = useState('');
@@ -22,9 +26,22 @@ const DropshipDashboard = () => {
   const [showProductModal, setShowProductModal] = useState(false);
   const [viewProductModal, setViewProductModal] = useState(false);
   const [error, setError] = useState(null);
-const [showAddProductOptions, setShowAddProductOptions] = useState(false);
-const [manualAdd, setManualAdd] = useState(false);
-const [aiAdd, setAiAdd] = useState(false);
+  const [showAddProductOptions, setShowAddProductOptions] = useState(false);
+  const [manualAdd, setManualAdd] = useState(false);
+  const [aiAdd, setAiAdd] = useState(false);
+  const [productMode, setProductMode] = useState(null);
+  const [openDropdown, setOpenDropdown] = useState(false);
+  const [genProducts, setGenProducts] = useState([]);
+
+  const navigate = useNavigate();
+  
+  
+  console.log("myproducts:", myProducts);
+
+
+
+
+
 // const [newProduct, setNewProduct] = useState({
 //   name: "",
 //   description: "",
@@ -40,12 +57,14 @@ const [isEditing, setIsEditing] = useState(false);
 
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem("token") : null;
 
+  
+
 
 
   const handleDelete = async (productId, product) => {
     try {
       console.log("product of the product", product)
-      await axios.delete(`https://hivehub-y2u8.onrender.com/api/my-products/${productId}`, {
+      await axios.delete(`http://localhost:8000/api/my-products/${productId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchMyProducts(); // refresh after delete
@@ -64,7 +83,7 @@ const saveStoreToBackend = async (storeData) => {
     }
 
     console.log("Saving store data:", storeData);
-    const res = await fetch("https://hivehub-y2u8.onrender.com/api/stores", {
+    const res = await fetch("http://localhost:8000/api/stores", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -89,7 +108,7 @@ const saveStoreToBackend = async (storeData) => {
 const fetchStores = async () => {
   try {
     if (!token) return;
-    const res = await fetch("https://hivehub-y2u8.onrender.com/api/stores", {
+    const res = await fetch("http://localhost:8000/api/stores", {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!res.ok) throw new Error("Failed to fetch stores");
@@ -107,9 +126,10 @@ const fetchStores = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`https://hivehub-y2u8.onrender.com/api/products?pageNum=${page}&pageSize=${size}`);
+      const res = await fetch(`http://localhost:8000/api/products?pageNum=${page}&pageSize=${size}`);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
+      console.log("data", data);
       const productsList = data?.data?.list ?? data?.list ?? [];
       console.log("Fetched products:", productsList);
       if (!Array.isArray(productsList) || productsList.length === 0) {
@@ -155,7 +175,7 @@ const fetchStores = async () => {
   const fetchMyProducts = async () => {
     if (!token) return;
     try {
-      const res = await fetch("https://hivehub-y2u8.onrender.com/api/my-products", {
+      const res = await fetch("http://localhost:8000/api/my-products", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch My Products");
@@ -170,22 +190,20 @@ const fetchStores = async () => {
     fetchProducts();
     fetchMyProducts();
     fetchStores();
+    fetchGenProducts();
+
+    if (token) {
+    try {
+      const decoded = JSON.parse(atob(token.split(".")[1]));
+      setUserId(decoded.id); // or decoded.userId depending on your backend
+    } catch (err) {
+      console.error("Failed to decode token", err);
+    }
+  }
   }, []);
 
-  // Get products by category
-  // const getProductsByCategory = (category) => {
-  //   switch(category) {
-  //     case 'trending':
-  //       return allProductsData.filter(p => p.trending).slice(0, 20);
-  //     case 'revenue':
-  //       return allProductsData.sort((a, b) => (b.price - a.price)).slice(0, 20);
-  //     case 'new':
-  //       return allProductsData.sort((a, b) => (b.createTime - a.createTime)).slice(0, 20);
-  //     default:
-  //       return allProductsData.slice(0, 20);
-  //   }
-  // };
 
+ 
   // Replace your getProductsByCategory function
 const getProductsByCategory = (category) => {
   const productsCopy = [...allProductsData]; // avoid mutating
@@ -198,6 +216,8 @@ const getProductsByCategory = (category) => {
       return productsCopy.sort((a, b) => b.price - a.price).slice(0, 20);
     case 'new':
       return productsCopy.sort((a, b) => b.createTime - a.createTime).slice(0, 20);
+    case 'myprod':
+      return genProducts;
     default:
       return productsCopy.slice(0, 20);
   }
@@ -221,7 +241,7 @@ const getProductsByCategory = (category) => {
     const storeId = `${newStore.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
 
 
-    return `https://hivehub-tr8u.vercel.app/store/${storeId}`;
+    return `http://localhost:5173/store/${storeId}`;
   };
 
   const createStore = async () => {
@@ -257,7 +277,7 @@ const getProductsByCategory = (category) => {
     }
       console.log("product", product);
       if (token) {
-        const response = await fetch('https://hivehub-y2u8.onrender.com/api/my-products', {
+        const response = await fetch('http://localhost:8000/api/my-products', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -295,23 +315,10 @@ const getProductsByCategory = (category) => {
     }
   };
 
-// const updateInventoryItem = async (productId, updates) => {
-//   try {
-//     if (token) {
-//       await fetch(`https://hivehub-y2u8.onrender.com/api/my-products/${productId}`, {
-//         method: 'PUT',
-//         headers: {
-//           'Authorization': `Bearer ${token}`,
-//           'Content-Type': 'application/json'
-//         },
-//         body: JSON.stringify(updates)
-//       });
-//       fetchMyProducts();
-//     }
-//   } catch (error) {
-//     console.error('Error updating product:', error);
-//   }
-// };
+
+const handleAddGenProduct = (newProduct) => {
+  setGenProducts((prev) => [newProduct, ...prev]); // put new product at top
+};
 
 const updateInventoryItem = async (productId, formData) => {
   try {
@@ -320,11 +327,10 @@ const updateInventoryItem = async (productId, formData) => {
 }
 
     if (token) {
-      const res = await fetch(`https://hivehub-y2u8.onrender.com/api/my-products/update`, {
+      const res = await fetch(`http://localhost:8000/api/my-products/update`, {
         method: "PUT",
         headers: {
           'Authorization': `Bearer ${token}`
-          // ⚠️ Don't set Content-Type manually, browser sets it automatically for FormData
         },
         body: formData
       });
@@ -359,7 +365,7 @@ const publishProduct = async (product) => {
 
   try {
     if (token) {
-      const response = await fetch(`https://hivehub-y2u8.onrender.com/api/publish-to-website/${productIds}`, {
+      const response = await fetch(`http://localhost:8000/api/publish-to-website/${productIds}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -386,181 +392,267 @@ const publishProduct = async (product) => {
 };
 
 
-  const generateWithAI = (field, currentValue) => {
-    const aiSuggestions = {
-      name: "Custom product",
-      description: "Experience premium sound quality with these advanced wireless earbuds featuring active noise cancellation, 30-hour battery life, and IPX7 water resistance.",
-      price: "34.99"
-    };
-    return aiSuggestions[field] || currentValue;
-  };
+
+
+
+//   const generateWithAI = async (field, currentValue) => {
+//   try {
+//     const res = await fetch("http://localhost:8000/api/generate-product", {
+//       method: "POST",
+//       headers: { 
+//         'Authorization': `Bearer ${token}`,
+//         "Content-Type": "application/json" 
+//       },
+//       body: JSON.stringify({ field, currentValue }),
+//     });
+
+//     const data = await res.json();
+//     return data.suggestion || currentValue;
+//   } catch (err) {
+//     console.error("AI generation failed:", err);
+//     return currentValue;
+//   }
+// };
+
+
+const generateWithAI = async (field, currentValue, nameValue) => {
+  try {
+    if (field === "name") {
+      // Generate product name
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${"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"}`, // 🔑 use env var
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            { role: "system", content: "You are a product generator." },
+            { role: "user", content: `Suggest a unique product name related to ${nameValue}.` }
+          ],
+        }),
+      });
+      const data = await res.json();
+      return data.choices[0].message.content.trim();
+    }
+
+    if (field === "category") {
+      // Description should be based on the generated name
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${"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"}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            { role: "system", content: "You are a creative product copywriter." },
+            { role: "user", content: `Write a short marketing description for the product called "${nameValue}". Can also mention special features.` }
+          ],
+        }),
+      });
+      const data = await res.json();
+      return data.choices[0].message.content.trim();
+    }
+
+    if (field === "image") {
+      // Generate an image for the product name
+      const res = await fetch("https://api.openai.com/v1/images/generations", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${"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"}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-image-1",
+          prompt: `High quality product image for ${nameValue}, professional e-commerce style, white background`,
+          size: "1024x1024",
+        }),
+      });
+      const data = await res.json();
+      console.log("Generated image data:", data);
+      return data.data[0].url;
+    }
+
+    return currentValue;
+  } catch (err) {
+    console.error("AI generation failed", err);
+    return currentValue;
+  }
+};
+
 
 
   
-  // Generate website content with selected products
-  const generateWebsiteContent = (store, publishedProducts) => {
-    console.log("publish product",publishedProducts);
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${store.name} - Online Store</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .product-card:hover { transform: translateY(-2px); transition: transform 0.2s; }
-        .hero-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    </style>
-</head>
-<body class="bg-gray-50">
-    <header class="bg-white shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
-                    <h1 class="text-2xl font-bold text-gray-900">${store.name}</h1>
-                    <span class="ml-3 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full capitalize">${store.category}</span>
-                </div>
-                <nav class="flex space-x-8">
-                    <a href="#products" class="text-gray-600 hover:text-gray-900">Products</a>
-                    <div id="cart-indicator" class="relative">
-                        <span class="text-gray-600">🛒</span>
-                        <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-1 min-w-[16px] h-4 flex items-center justify-center hidden">0</span>
-                    </div>
-                </nav>
-            </div>
-        </div>
-    </header>
-    <section class="hero-gradient text-white py-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 class="text-4xl font-bold mb-4">Welcome to ${store.name}</h2>
-            <p class="text-xl mb-8">${store.description || `Your trusted ${store.category} store with amazing products!`}</p>
-            <a href="#products" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">Shop Now</a>
-        </div>
-    </section>
-    <section id="products" class="py-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="text-3xl font-bold text-gray-900 text-center mb-12">Our Products</h2>
+//   // Generate website content with selected products
+//   const generateWebsiteContent = (store, publishedProducts) => {
+//     console.log("publish product",publishedProducts);
+//     return `<!DOCTYPE html>
+// <html lang="en">
+// <head>
+//     <meta charset="UTF-8">
+//     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+//     <title>${store.name} - Online Store</title>
+//     <script src="https://cdn.tailwindcss.com"></script>
+//     <style>
+//         .product-card:hover { transform: translateY(-2px); transition: transform 0.2s; }
+//         .hero-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+//         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+//     </style>
+// </head>
+// <body class="bg-gray-50">
+//     <header class="bg-white shadow-sm">
+//         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+//             <div class="flex justify-between items-center h-16">
+//                 <div class="flex items-center">
+//                     <h1 class="text-2xl font-bold text-gray-900">${store.name}</h1>
+//                     <span class="ml-3 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full capitalize">${store.category}</span>
+//                 </div>
+//                 <nav class="flex space-x-8">
+//                     <a href="#products" class="text-gray-600 hover:text-gray-900">Products</a>
+//                     <div id="cart-indicator" class="relative">
+//                         <span class="text-gray-600">🛒</span>
+//                         <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-1 min-w-[16px] h-4 flex items-center justify-center hidden">0</span>
+//                     </div>
+//                 </nav>
+//             </div>
+//         </div>
+//     </header>
+//     <section class="hero-gradient text-white py-20">
+//         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+//             <h2 class="text-4xl font-bold mb-4">Welcome to ${store.name}</h2>
+//             <p class="text-xl mb-8">${store.description || `Your trusted ${store.category} store with amazing products!`}</p>
+//             <a href="#products" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">Shop Now</a>
+//         </div>
+//     </section>
+//     <section id="products" class="py-16">
+//         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+//             <h2 class="text-3xl font-bold text-gray-900 text-center mb-12">Our Products</h2>
             
-            ${publishedProducts.length === 0 ? `
-                <div class="text-center py-12">
-                    <div class="text-6xl mb-4">📦</div>
-                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Coming Soon!</h3>
-                    <p class="text-gray-600">We're adding amazing products to our store. Check back soon!</p>
-                </div>
-            ` : `
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                    ${publishedProducts.map(product => `
-                        <div class="product-card bg-white rounded-lg shadow-md overflow-hidden">
-                            <img src="${product.image}" alt="${product.name}" class="w-full h-48 object-cover" onerror="this.src='https://via.placeholder.com/300x300/4F46E5/white?text=Product'">
-                            <div class="p-6">
-                                <h3 class="font-semibold text-gray-900 mb-2 line-clamp-2">${product.name}</h3>
-                                <p class="text-gray-600 text-sm mb-3 line-clamp-2">${product.description}</p>
-                                <div class="flex items-center justify-between mb-3">
-                                    <div>
-                                        <span class="text-lg font-bold text-gray-900">$${(product.sellingPrice || product.price).toFixed(2)}</span>
-                                        ${product.originalPrice ? `<span class="ml-2 text-sm text-gray-500 line-through">$${product.originalPrice.toFixed(2)}</span>` : ''}
-                                    </div>
-                                </div>
-                                <button class="add-to-cart-btn w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors" data-product-name="${product.name}" data-product-price="${(product.sellingPrice || product.price).toFixed(2)}">Add to Cart</button>
-                                <div class="mt-3 flex items-center">
-                                    <div class="flex items-center">
-                                        ${Array(5).fill(0).map((_, i) => `<svg class="w-4 h-4 ${i < Math.floor(product.rating || 4) ? 'text-yellow-400' : 'text-gray-300'}" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>`).join('')}
-                                    </div>
-                                    <span class="ml-2 text-sm text-gray-600">(${product.reviews || 0})</span>
-                                </div>
-                                ${product.isFreeShipping ? '<div class="mt-2"><span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Free Shipping</span></div>' : ''}
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `}
-        </div>
-    </section>
-    <script>
-        let cart = [];
-        const cartCountElement = document.getElementById('cart-count');
+//             ${publishedProducts.length === 0 ? `
+//                 <div class="text-center py-12">
+//                     <div class="text-6xl mb-4">📦</div>
+//                     <h3 class="text-xl font-semibold text-gray-900 mb-2">Coming Soon!</h3>
+//                     <p class="text-gray-600">We're adding amazing products to our store. Check back soon!</p>
+//                 </div>
+//             ` : `
+//                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+//                     ${publishedProducts.map(product => `
+//                         <div class="product-card bg-white rounded-lg shadow-md overflow-hidden">
+//                             <img src="${product.image}" alt="${product.name}" class="w-full h-48 object-cover" onerror="this.src='https://via.placeholder.com/300x300/4F46E5/white?text=Product'">
+//                             <div class="p-6">
+//                                 <h3 class="font-semibold text-gray-900 mb-2 line-clamp-2">${product.name}</h3>
+//                                 <p class="text-gray-600 text-sm mb-3 line-clamp-2">${product.description}</p>
+//                                 <div class="flex items-center justify-between mb-3">
+//                                     <div>
+//                                         <span class="text-lg font-bold text-gray-900">$${((product?.sellingPrice || product?.price) && !isNaN(product?.sellingPrice || product?.price) ? (product?.sellingPrice || product.price)?.toFixed(2) : '0.00')}</span>
+//                                         ${product?.price ? `<span class="ml-2 text-sm text-gray-500 line-through">$${product?.price?.toFixed(2)}</span>` : ''}
+//                                     </div>
+//                                 </div>
+//                                 <button class="add-to-cart-btn w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors" data-product-name="${product.name}" data-product-price="${(product.sellingPrice || product.price).toFixed(2)}">Add to Cart</button>
+//                                 <div class="mt-3 flex items-center">
+//                                     <div class="flex items-center">
+//                                         ${Array(5).fill(0).map((_, i) => `<svg class="w-4 h-4 ${i < Math.floor(product.rating || 4) ? 'text-yellow-400' : 'text-gray-300'}" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>`).join('')}
+//                                     </div>
+//                                     <span class="ml-2 text-sm text-gray-600">(${product.reviews || 0})</span>
+//                                 </div>
+//                                 ${product.isFreeShipping ? '<div class="mt-2"><span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Free Shipping</span></div>' : ''}
+//                             </div>
+//                         </div>
+//                     `).join('')}
+//                 </div>
+//             `}
+//         </div>
+//     </section>
+//     <script>
+//         let cart = [];
+//         const cartCountElement = document.getElementById('cart-count');
         
-        function updateCartCount() {
-            const count = cart.length;
-            if (count > 0) {
-                cartCountElement.textContent = count;
-                cartCountElement.classList.remove('hidden');
-            } else {
-                cartCountElement.classList.add('hidden');
-            }
-        }
+//         function updateCartCount() {
+//             const count = cart.length;
+//             if (count > 0) {
+//                 cartCountElement.textContent = count;
+//                 cartCountElement.classList.remove('hidden');
+//             } else {
+//                 cartCountElement.classList.add('hidden');
+//             }
+//         }
         
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('add-to-cart-btn')) {
-                e.preventDefault();
-                const productName = e.target.dataset.productName;
-                const productPrice = e.target.dataset.productPrice;
+//         document.addEventListener('click', function(e) {
+//             if (e.target.classList.contains('add-to-cart-btn')) {
+//                 e.preventDefault();
+//                 const productName = e.target.dataset.productName;
+//                 const productPrice = e.target.dataset.productPrice;
                 
-                cart.push({name: productName, price: productPrice});
+//                 cart.push({name: productName, price: productPrice});
                 
-                e.target.textContent = 'Added!';
-                e.target.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                e.target.classList.add('bg-green-600');
+//                 e.target.textContent = 'Added!';
+//                 e.target.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+//                 e.target.classList.add('bg-green-600');
                 
-                updateCartCount();
+//                 updateCartCount();
                 
-                setTimeout(() => {
-                    e.target.textContent = 'Add to Cart';
-                    e.target.classList.remove('bg-green-600');
-                    e.target.classList.add('bg-blue-600', 'hover:bg-blue-700');
-                }, 2000);
+//                 setTimeout(() => {
+//                     e.target.textContent = 'Add to Cart';
+//                     e.target.classList.remove('bg-green-600');
+//                     e.target.classList.add('bg-blue-600', 'hover:bg-blue-700');
+//                 }, 2000);
                 
-                const toast = document.createElement('div');
-                toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-                toast.textContent = \`Added "\${productName}" to cart!\`;
-                document.body.appendChild(toast);
+//                 const toast = document.createElement('div');
+//                 toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+//                 toast.textContent = \`Added "\${productName}" to cart!\`;
+//                 document.body.appendChild(toast);
                 
-                setTimeout(() => toast.remove(), 3000);
-            }
-        });
-    </script>
+//                 setTimeout(() => toast.remove(), 3000);
+//             }
+//         });
+//     </script>
         
-    <footer class="bg-gray-900 text-white py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div>
-                    <h3 class="text-lg font-semibold mb-4">${store.name}</h3>
-                    <p class="text-gray-400">Your trusted online ${store.category} store.</p>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">Quick Links</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#products" class="hover:text-white">Products</a></li>
-                        <li><a href="#about" class="hover:text-white">About Us</a></li>
-                        <li><a href="#contact" class="hover:text-white">Contact</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">Support</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#" class="hover:text-white">Help Center</a></li>
-                        <li><a href="#" class="hover:text-white">Returns</a></li>
-                        <li><a href="#" class="hover:text-white">Shipping Info</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">Contact Info</h4>
-                    <div class="text-gray-400 space-y-2">
-                        <p>📧 info@${store.name.toLowerCase().replace(/\s+/g, '')}.com</p>
-                        <p>📞 +1 (555) 123-4567</p>
-                        <p>📍 123 Business St, City, State</p>
-                    </div>
-                </div>
-            </div>
-            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-                <p>&copy; 2024 ${store.name}. All rights reserved. | Powered by DropShip Pro</p>
-            </div>
-        </div>
-    </footer>
-</body>
-</html>`;
-  };
+//     <footer class="bg-gray-900 text-white py-12">
+//         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+//             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+//                 <div>
+//                     <h3 class="text-lg font-semibold mb-4">${store.name}</h3>
+//                     <p class="text-gray-400">Your trusted online ${store.category} store.</p>
+//                 </div>
+//                 <div>
+//                     <h4 class="font-semibold mb-4">Quick Links</h4>
+//                     <ul class="space-y-2 text-gray-400">
+//                         <li><a href="#products" class="hover:text-white">Products</a></li>
+//                         <li><a href="#about" class="hover:text-white">About Us</a></li>
+//                         <li><a href="#contact" class="hover:text-white">Contact</a></li>
+//                     </ul>
+//                 </div>
+//                 <div>
+//                     <h4 class="font-semibold mb-4">Support</h4>
+//                     <ul class="space-y-2 text-gray-400">
+//                         <li><a href="#" class="hover:text-white">Help Center</a></li>
+//                         <li><a href="#" class="hover:text-white">Returns</a></li>
+//                         <li><a href="#" class="hover:text-white">Shipping Info</a></li>
+//                     </ul>
+//                 </div>
+//                 <div>
+//                     <h4 class="font-semibold mb-4">Contact Info</h4>
+//                     <div class="text-gray-400 space-y-2">
+//                         <p>📧 info@${store.name.toLowerCase().replace(/\s+/g, '')}.com</p>
+//                         <p>📞 +1 (555) 123-4567</p>
+//                         <p>📍 123 Business St, City, State</p>
+//                     </div>
+//                 </div>
+//             </div>
+//             <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+//                 <p>&copy; 2024 ${store.name}. All rights reserved. | Powered by DropShip Pro</p>
+//             </div>
+//         </div>
+//     </footer>
+// </body>
+// </html>`;
+//   };
+
+
+
 
     const createLocalWebsite = (store) => {
     console.log("store store",store);
@@ -570,6 +662,11 @@ const publishProduct = async (product) => {
 
     console.log("publishedProducts",publishedProducts);
     const websiteContent = generateWebsiteContent(store, publishedProducts);
+    // const response =  fetch(`http://localhost:8000/api/stores/${store._id}/html`);
+    // const html =  response.text();
+    // const blob = new Blob([html], { type: "text/html" });
+    // const url = URL.createObjectURL(blob);
+    // window.open(url, "_blank");
     const blob = new Blob([websiteContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     
@@ -581,20 +678,28 @@ const publishProduct = async (product) => {
     return url;
   };
 
+
+   const fetchGenProducts = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/api/gen-products");
+      const data = await res.json();
+    const products = Array.isArray(data) ? data : data.products || [];
+
+    // setNewArrivals(products);
+    //   if (!res.ok) throw new Error("Failed to load generated products");
+      // const data = await res.json();
+
+      setGenProducts(Array.isArray(data) ? data : data.products || []);
+      console.log("Generated products fetched:", products);
+    } catch (err) {
+      console.error("Failed to fetch gen products:", err);
+    }
+  };
+
     useEffect(() => {
-  // if (stores && stores.length > 0) {
-  //   const updatedStores = stores.map((store) => {
-  //     // if blob already created, keep it
-  //     if (store.localUrl && store.localUrl.startsWith("blob:")) return store;
 
-  //     const blobUrl = createLocalWebsite(store);
-  //     return { ...store, localUrl: blobUrl };
-  //   });
-  //   setStores(updatedStores);
-  // }
-
-  if (stores && stores.length > 0) {
-    const needsUpdate = stores.some(store => !store.localUrl?.startsWith("blob:"));
+  if (stores && stores?.length > 0) {
+    const needsUpdate = stores.some(store => !store?.localUrl?.startsWith("blob:"));
     if (!needsUpdate) return; // ✅ Already processed
 
     const updatedStores = stores.map(store => {
@@ -608,13 +713,41 @@ const publishProduct = async (product) => {
 
 
 
+  // const openStoreWebsite = (store) => {
+  //   // const url = createLocalWebsite(store);
+
+  // const url = store.customDomain
+  //   ? (store.customDomain.startsWith("http")
+  //       ? store.customDomain
+  //       : `https://${store.customDomain}`)
+  //   : store.domain;
+
+  // if (url) {
+  //   window.open(url, "_blank");
+  // } else {
+  //   alert("No domain found for this store");
+  // }
+
+  //   // window.open(store.domain, '_blank');
+  // };
+
+//   const openStoreWebsite = (store) => {
+//   const domainToOpen = store.domainVerified && store.customDomain
+//     ? (store.customDomain.startsWith("http") ? store.customDomain : `https://${store.customDomain}`)
+//     : store.domain; // fallback default domain
+//   window.open(domainToOpen, "_blank");
+// };
+
   const openStoreWebsite = (store) => {
-    // const url = createLocalWebsite(store);
+  const slug = store.customDomain
+    ? store.customDomain.replace(/^https?:\/\//, "")
+    : store.domain?.split("/").pop();
 
-  
+  // Open using the slug route
+  window.open(`http://localhost:5173/store/${slug}`, "_blank");
+};
 
-    window.open(store.domain, '_blank');
-  };
+
 
   const filteredProducts = allProductsData.filter(product =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -637,7 +770,7 @@ const publishProduct = async (product) => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <Store className="h-8 w-8 text-blue-600" />
-              <span className="ml-2 text-xl font-bold text-gray-900">DropShip Pro</span>
+              <span className="ml-2 text-xl font-bold text-gray-900">Hivee Hub</span>
             </div>
             <nav className="flex space-x-8">
               <button onClick={() => setCurrentView('dashboard')} className={`px-3 py-2 text-sm font-medium ${currentView === 'dashboard' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>Dashboard</button>
@@ -701,7 +834,10 @@ const publishProduct = async (product) => {
           </div>
         )}
 
+{console.log("Store data:", stores)}
         {currentView === 'stores' && (
+      
+
           <div>
             <div className="flex justify-between items-center mb-8">
               <div>
@@ -724,42 +860,18 @@ const publishProduct = async (product) => {
                 </button>
               </div>
             ) : (
-              // <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              //   {stores.map(store => (
-              //     <div key={store.id} className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
-              //       <div className="flex justify-between items-start mb-4">
-              //         <div>
-              //           <h3 className="text-lg font-semibold text-gray-900">{store.name}</h3>
-              //           <p className="text-sm text-gray-600 capitalize">{store.category}</p>
-              //         </div>
-              //         <button onClick={() => { setSelectedStore(store); setCurrentView('products'); }} className="text-blue-600 hover:text-blue-800">
-              //           <ExternalLink className="h-5 w-5" />
-              //         </button>
-              //       </div>
-              //       <div className="flex justify-between items-center">
-              //         <button onClick={() => openStoreWebsite(store)} className="text-sm text-blue-600 hover:text-blue-800 flex items-center">
-              //           <Globe className="h-4 w-4 mr-1" />
-              //           View Live Store
-              //         </button>
-              //         <button onClick={() => { setSelectedStore(store); setCurrentView('inventory'); }} className="text-sm text-gray-600 hover:text-gray-800">
-              //           Manage
-              //         </button>
-              //       </div>
-              //     </div>
-              //   ))}
-              // </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {stores.map((store) => (
-                  
                   <div
-                    key={store.id}
+                    key={store?.id}
                     className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow"
                   >
                     {/* Header */}
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{store.name}</h3>
-                        <p className="text-sm text-gray-600 capitalize">{store.category}</p>
+                        <h3 className="text-lg font-semibold text-gray-900">{store?.name}</h3>
+                        <p className="text-sm text-gray-600 capitalize">{store?.category}</p>
                       </div>
                       <button
                         onClick={() => openStoreWebsite(store)}
@@ -773,15 +885,15 @@ const publishProduct = async (product) => {
                     
                     <div className="mb-4">
   <p className="text-sm text-gray-800 font-medium truncate">
-    {store.domain}
+    {store?.customDomain || store?.domain}
   </p>
   <div className="flex gap-2 mt-2">
     {/* Copy button */}
     <button
       onClick={() => {
-        const copyUrl = store.domain.startsWith("http")
-          ? store.domain
-          : `${window.location.origin}/${store.domain.replace(/^\//, "")}`;
+        const copyUrl = (store?.customDomain || store.domain).startsWith("http")
+          ? (store?.customDomain || store.domain)
+          : `${window.location.origin}/${(store?.customDomain || store.domain).domain.replace(/^\//, "")}`;
 
         navigator.clipboard
           .writeText(copyUrl)
@@ -793,18 +905,26 @@ const publishProduct = async (product) => {
       <Copy className="h-4 w-4 mr-1" />
       Copy
     </button>
+    <button onClick={() => navigate(`/builder/${store._id}`, {
+      state: { store, publishedProducts: myProducts.filter(p => p.published) }
+    })
+    }
+    >
+      Edit Store</button>
+{/* <Button onClick={() => window.open(`https://${store.domain}`, "_blank")}>View Store</Button> */}
+
 
     {/* Share button */}
     <button
       onClick={() => {
         if (navigator.share) {
           const shareUrl = store.domain.startsWith("http")
-            ? store.domain
-            : `${window.location.origin}/${store.domain.replace(/^\//, "")}`;
+            ? store?.domain
+            : `${window.location.origin}/${store?.domain.replace(/^\//, "")}`;
 
           navigator
             .share({
-              title: store.name || "My Store",
+              title: store?.name || "My Store",
               url: shareUrl,
             })
             .catch((err) => console.error("Share failed:", err));
@@ -817,35 +937,38 @@ const publishProduct = async (product) => {
       <Share2 className="h-4 w-4 mr-1" />
       Share
     </button>
+    <button
+    onClick={() => {
+      const newDomain = prompt("Enter your custom domain:", store?.customDomain || "");
+      if (newDomain) {
+        fetch(`http://localhost:8000/api/stores/${store?._id}/domain`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ customDomain: newDomain }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success) {
+              setStores((prev) =>
+                prev.map((s) =>
+                  s._id === store._id ? data.store : s
+                )
+              );
+            } else {
+              alert(data.error || "Failed to update domain");
+            }
+          });
+      }
+    }}
+    className="ml-2 text-xs text-blue-600 hover:text-blue-900"
+  >
+    Edit Domain
+  </button>
   </div>
 </div>
-
-
-
-{/* <button
-  onClick={() => {
-    const shareUrl = store.domain || store.localUrl; // prefer domain if available
-    if (navigator.share && shareUrl.startsWith("http")) {
-      navigator
-        .share({
-          title: store.name,
-          url: shareUrl,
-        })
-        .catch((err) => console.error("Share failed:", err));
-    } else {
-      navigator.clipboard
-        .writeText(shareUrl)
-        .then(() => alert("Link copied!"))
-        .catch(() => alert("Failed to copy link"));
-    }
-  }}
-  className="flex items-center text-xs text-gray-600 hover:text-gray-900"
->
-  <Share2 className="h-4 w-4 mr-1" />
-  Share
-</button> */}
-
-
 
                     {/* Actions */}
                     <div className="flex justify-between items-center">
@@ -910,15 +1033,47 @@ const publishProduct = async (product) => {
         {currentView === 'products' && (
           <div>
             <div className="flex justify-end mb-4">
-    <button 
-      onClick={() => {
-        setSelectedProduct(null); // clear product
-        setShowProductModal(true);
-      }} 
-      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-    >
-      + Add Product
-    </button>
+   
+
+    <div className="relative inline-block text-left">
+
+
+ <button
+    onClick={() => setOpenDropdown((prev) => !prev)}
+    className="flex items-center bg-green-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-green-700 transition"
+  >
+    + Add Product
+    <ChevronDown className="ml-2 w-4 h-4" />
+  </button>
+
+ 
+
+  {openDropdown && (
+    <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border z-50">
+      <button
+        onClick={() => {
+          setProductMode("manual");
+          setShowProductModal(true);
+          setOpenDropdown(false);
+        }}
+        className="block w-full text-left px-4 py-2 hover:bg-gray-100 rounded-t-lg"
+      >
+        Manual
+      </button>
+      <button
+        onClick={() => {
+          setProductMode("ai");
+          setShowProductModal(true);
+          setOpenDropdown(false);
+        }}
+        className="block w-full text-left px-4 py-2 hover:bg-gray-100 rounded-b-lg"
+      >
+        AI
+      </button>
+    </div>
+  )}
+</div>
+
    
 
   </div>
@@ -932,32 +1087,104 @@ const publishProduct = async (product) => {
               )}
             </div>
 
-            <div className="bg-white p-4 rounded-lg shadow mb-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-                <div className="flex space-x-4">
-                  {[
-                    { id: 'trending', label: 'Trending', icon: TrendingUp },
-                    { id: 'revenue', label: 'Revenue Based', icon: DollarSign },
-                    { id: 'new', label: 'New Arrivals', icon: Calendar }
-                  ].map(tab => (
-                    <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center px-4 py-2 rounded-lg transition-colors ${activeTab === tab.id ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}>
-                      <tab.icon className="h-4 w-4 mr-2" />
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="relative">
-                  <Search className="h-5 w-5 absolute left-3 top-2.5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search products..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
+
+<div className="bg-white p-4 rounded-lg shadow mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+          <div className="flex space-x-4">
+            {[
+              { id: "trending", label: "Trending", icon: TrendingUp },
+              { id: "revenue", label: "Revenue Based", icon: DollarSign },
+              { id: "new", label: "New Arrivals", icon: Calendar },
+              { id: "myprod", label: "My Products", icon: Calendar },
+
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center px-4 py-2 rounded-lg transition-colors ${
+                  activeTab === tab.id
+                    ? "bg-blue-100 text-blue-700"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                <tab.icon className="h-4 w-4 mr-2" />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <div className="relative">
+            <Search className="h-5 w-5 absolute left-3 top-2.5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+      </div>
+
+
+      {activeTab === "myprod" && (
+  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+    {newArrivals.filter((p) => p.userId === userId).length === 0 ? (
+      <p className="text-gray-500">You haven’t added any products yet.</p>
+    ) : (
+     newArrivals
+        .filter((p) => p.userId === userId) // ✅ only your products
+        .map((product) => (
+        <div
+          key={product._id}
+          className="bg-white border rounded-lg shadow hover:shadow-md transition p-4"
+        >
+          {/* Image(s) - bigger than other tabs */}
+          {Array.isArray(product.image) ? (
+            <div className="flex gap-2 overflow-x-auto">
+              {product.image.map((img, i) => (
+                <img
+                  key={i}
+                  src={img}
+                  alt={product.name}
+                  className="h-56 w-full object-cover rounded"
+                />
+              ))}
             </div>
+          ) : (
+            <img
+              src={product.image}
+              alt={product.name}
+              className="h-64 w-full object-cover rounded mb-2"
+            />
+          )}
+
+          {/* Info */}
+          <h3 className="text-lg font-semibold">{product.name}</h3>
+          <p className="text-sm text-gray-500">{product.category}</p>
+          <p className="mt-1 text-gray-700 text-sm line-clamp-2">
+            {product.description}
+          </p>
+
+          {/* Prices */}
+          <div className="flex justify-between items-center mt-3">
+            <span className="text-gray-900 font-bold">
+              ${product.sellingPrice}
+            </span>
+            <span className="text-sm text-gray-500 line-through">
+              ${product.originalPrice}
+            </span>
+          </div>
+
+          {/* Profit */}
+          <p className="text-green-600 text-sm mt-1">
+            Profit: ${product.potentialProfit}
+          </p>
+        </div>
+      ))
+    )}
+  </div>
+)}
+
 
             {loading ? (
               <div className="flex justify-center items-center py-12">
@@ -991,16 +1218,7 @@ const publishProduct = async (product) => {
                           <span className="ml-2 text-sm text-gray-500 line-through">${product.originalPrice}</span>
                         </div>
                       </div>
-                      {/* <button 
-                        onClick={() => { 
-                          setSelectedProduct(product); 
-                          setShowProductModal(true); 
-                        }} 
-                        className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        Edit Product
-                      </button> */}
-                      {/* <button onClick={() =>  addToInventory(product)} className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">View Details</button> */}
+                     
                       <button
                       onClick={() => {
                         setSelectedProduct(product);
@@ -1030,6 +1248,19 @@ const publishProduct = async (product) => {
                 <Plus className="h-5 w-5 mr-2" />
                 Add Products
               </button>
+              {/* Select Store Dropdown */}
+              <select
+                value={selectedStore}
+                onChange={(e) => setSelectedStore(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-2"
+              >
+                <option value="">All Stores</option>
+                {stores.map((store) => (
+                  <option key={store._id} value={store._id}>
+                    {store.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {myProducts.length === 0 ? (
@@ -1054,8 +1285,20 @@ const publishProduct = async (product) => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {myProducts.map(item => (
+                      {/* {myProducts.map(item => (
                         <InventoryRow key={item._id || item.productId} item={item} onDelete={handleDelete} onUpdate={updateInventoryItem} onPublish={() => publishProduct(item)} generateWithAI={generateWithAI} />
+                      ))} */}
+                      {myProducts
+                        .filter(item => !selectedStore || item.storeId === selectedStore)
+                        .map(item => (
+                          <InventoryRow
+                            key={item._id || item.productId}
+                            item={item}
+                            onDelete={handleDelete}
+                            onUpdate={updateInventoryItem}
+                            onPublish={() => publishProduct(item)}
+                            generateWithAI={generateWithAI}
+                          />
                       ))}
                     </tbody>
                   </table>
@@ -1179,62 +1422,7 @@ const publishProduct = async (product) => {
 
       </main>
 
-      {/* {showProductModal && selectedProduct && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b">
-              <h2 className="text-xl font-semibold text-gray-900">Product Details</h2>
-              <button onClick={() => setShowProductModal(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <img src={selectedProduct.image} alt={selectedProduct.name} className="w-full h-64 object-cover rounded-lg" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">{selectedProduct.name}</h3>
-                  <div className="flex items-center mb-3">
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`h-4 w-4 ${i < Math.floor(selectedProduct.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
-                      ))}
-                      <span className="ml-2 text-sm text-gray-600">({selectedProduct.reviews} reviews)</span>
-                    </div>
-                  </div>
-                  <div className="mb-4">
-                    <span className="text-2xl font-bold text-gray-900">${selectedProduct.price}</span>
-                    <span className="ml-2 text-lg text-gray-500 line-through">${selectedProduct.originalPrice}</span>
-                  </div>
-                  <div className="mb-6">
-                    <h4 className="font-semibold text-gray-900 mb-2">Description</h4>
-                    <p className="text-gray-600">{selectedProduct.description}</p>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Cost Price:</span>
-                      <span className="font-medium">${selectedProduct.price}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Suggested Retail:</span>
-                      <span className="font-medium">${(selectedProduct.price * 1.5).toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Potential Profit:</span>
-                      <span className="font-medium text-green-600">${(selectedProduct.price * 0.5).toFixed(2)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="p-6 border-t bg-gray-50 flex justify-end space-x-3">
-              <button onClick={() => setShowProductModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
-              <button onClick={() => addToInventory(selectedProduct)} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Add to Inventory</button>
-            </div>
-          </div>
-        </div>
-      )} */}
+      
 
       {showProductModal && (
   <AddProductModal
@@ -1242,13 +1430,17 @@ const publishProduct = async (product) => {
       setShowProductModal(false);
       setSelectedProduct(null);
     }}
+    onAddGenProduct={handleAddGenProduct}
+    fetchGenProducts={fetchGenProducts}
     fetchMyProducts={fetchMyProducts}
     generateWithAI={generateWithAI}
     addToInventory={addToInventory}
     token={token}
     selectedStore={selectedStore}
-    selectedProduct={selectedProduct} // can be null for add mode
+    selectedProduct={selectedProduct} 
     isEditing={isEditing}
+    productMode={productMode}   
+
   />
 )}
 
@@ -1259,6 +1451,8 @@ const publishProduct = async (product) => {
       setSelectedProduct(null);
     }}
     fetchMyProducts={fetchMyProducts}
+    genProducts={genProducts}
+    fetchGenProducts={fetchGenProducts}
     generateWithAI={generateWithAI}
     addToInventory={addToInventory}
     token={token}
@@ -1293,218 +1487,19 @@ const publishProduct = async (product) => {
     </div>
   </div>
 )}
-
-
-
-
-
-
-    </div>
+  </div>
   );
 };
 
+import EditInventoryModal from "./EditInventoryModal";
 const InventoryRow = ({ item, onUpdate, onPublish, generateWithAI, onDelete }) => {
   console.log("inventory item", item);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({
-    name: item.name,
-    sellingPrice: item.sellingPrice,
-    quantity: item.quantity,
-    description: item.description
-  });
 
-  console.log("edit data", editData);
-
-  // const handleSave = () => {
-  //   onUpdate(item.id, editData);
-  //   setIsEditing(false);
-  // };
-
-    
-
-  const handleSave = () => {
-  const formData = new FormData();
-  formData.append("productId", item.productId || item._id);
-  formData.append("storeId", item.storeId || item.productId);
-  formData.append("name", editData.name);
-  formData.append("price", editData.price);
-  formData.append("sellingPrice", editData.sellingPrice);
-  formData.append("quantity", editData.quantity);
-  formData.append("description", editData.description || "this is desc");
-
-  if (editData.imageFile) {
-    formData.append("image", editData.imageFile); // actual file
-  }
-  console.log("item", item);
-
-  onUpdate(item.productId, formData); // pass FormData instead of JSON
-  setIsEditing(false);
-};
-
-
-  const handleAIGenerate = (field) => {
-    const newValue = generateWithAI(field, editData[field]);
-    setEditData({ ...editData, [field]: newValue });
-  };
-
-  // if (isEditing) {
-  //   return (
-  //     <tr className="bg-blue-50">
-  //       <td className="px-6 py-4">
-  //         <div className="flex items-center">
-  //           <img src={item.image} alt="" className="h-12 w-12 rounded-lg object-cover mr-3" />
-  //           <div>
-  //             <div className="flex items-center space-x-2">
-  //               <input type="text" value={editData.name} onChange={(e) => setEditData({...editData, name: e.target.value})} className="font-medium text-gray-900 border rounded px-2 py-1 text-sm" />
-  //               <button onClick={() => handleAIGenerate('name')} className="text-purple-600 hover:text-purple-800" title="Generate with AI">
-  //                 <Wand2 className="h-4 w-4" />
-  //               </button>
-  //             </div>
-  //           </div>
-  //         </div>
-  //       </td>
-  //       <td className="px-6 py-4 text-sm text-gray-900">${item.price}</td>
-  //       <td className="px-6 py-4">
-  //         <div className="flex items-center space-x-2">
-  //           <input type="number" value={editData.sellingPrice} onChange={(e) => setEditData({...editData, sellingPrice: parseFloat(e.target.value)})} className="text-sm border rounded px-2 py-1 w-20" step="0.01" />
-  //           <button onClick={() => handleAIGenerate('price')} className="text-purple-600 hover:text-purple-800" title="Generate with AI">
-  //             <Wand2 className="h-4 w-4" />
-  //           </button>
-  //         </div>
-  //       </td>
-  //       <td className="px-6 py-4">
-  //         <input type="number" value={editData.quantity} onChange={(e) => setEditData({...editData, quantity: parseInt(e.target.value)})} className="text-sm border rounded px-2 py-1 w-16" />
-  //       </td>
-  //       <td className="px-6 py-4">
-  //         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-  //           {item.published ? 'Published' : 'Draft'}
-  //         </span>
-  //       </td>
-  //       <td className="px-6 py-4 text-sm font-medium space-x-2">
-  //         <button onClick={handleSave} className="text-green-600 hover:text-green-900">
-  //           <Check className="h-4 w-4" />
-  //         </button>
-  //         <button onClick={() => setIsEditing(false)} className="text-gray-400 hover:text-gray-600">
-  //           <X className="h-4 w-4" />
-  //         </button>
-  //       </td>
-  //     </tr>
-  //   );
-  // }
-
-  if (isEditing) {
-  return (
-    <tr className="bg-blue-50">
-      {/* Product Name + Image Upload */}
-      <td className="px-6 py-4">
-        <div className="flex items-center">
-          {/* <img src={editData.image || item.image} alt="" className="h-12 w-12 rounded-lg object-cover mr-3" /> */}
-          <img
-            src={editData.imageFile ? URL.createObjectURL(editData.imageFile) : item.image}
-            alt=""
-            className="h-12 w-12 rounded-lg object-cover mr-3"
-          />
-
-          <div>
-            <div className="flex items-center space-x-2 mb-2">
-              <input
-                type="text"
-                value={editData.name}
-                onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-                className="font-medium text-gray-900 border rounded px-2 py-1 text-sm"
-              />
-              <button
-                onClick={() => handleAIGenerate("name")}
-                className="text-purple-600 hover:text-purple-800"
-                title="Generate with AI"
-              >
-                <Wand2 className="h-4 w-4" />
-              </button>
-            </div>
-
-            {/* Image upload */}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files[0];
-                if (file) {
-                  setEditData({ ...editData, imageFile: file });
-                }
-              }}
-              className="text-xs text-gray-500"
-            />
-          </div>
-        </div>
-      </td>
-
-      {/* Cost Price */}
-      <td className="px-6 py-4">
-        <input
-          type="number"
-          value={editData.price}
-          onChange={(e) => setEditData({ ...editData, price: parseFloat(e.target.value) })}
-          className="text-sm border rounded px-2 py-1 w-20"
-          step="0.01"
-        />
-      </td>
-
-      {/* Selling Price */}
-      <td className="px-6 py-4">
-        <div className="flex items-center space-x-2">
-          <input
-            type="number"
-            value={editData.sellingPrice }
-            onChange={(e) => setEditData({ ...editData, sellingPrice: parseFloat(e.target.value) })}
-            className="text-sm border rounded px-2 py-1 w-20"
-            step="0.01"
-          />
-          <button
-            onClick={() => handleAIGenerate("sellingPrice")}
-            className="text-purple-600 hover:text-purple-800"
-            title="Generate with AI"
-          >
-            <Wand2 className="h-4 w-4" />
-          </button>
-        </div>
-      </td>
-
-      {/* Quantity */}
-      <td className="px-6 py-4">
-        <input
-          type="number"
-          value={editData.quantity }
-          onChange={(e) => setEditData({ ...editData, quantity: parseInt(e.target.value) })}
-          className="text-sm border rounded px-2 py-1 w-16"
-        />
-      </td>
-
-      {/* Status */}
-      <td className="px-6 py-4">
-        <span
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            item.published ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
-          }`}
-        >
-          {item.published ? "Published" : "Draft"}
-        </span>
-      </td>
-
-      {/* Save / Cancel */}
-      <td className="px-6 py-4 text-sm font-medium space-x-2">
-        <button onClick={handleSave} className="text-green-600 hover:text-green-900">
-          <Check className="h-4 w-4" />
-        </button>
-        <button onClick={() => setIsEditing(false)} className="text-gray-400 hover:text-gray-600">
-          <X className="h-4 w-4" />
-        </button>
-      </td>
-    </tr>
-  );
-}
-
+  const [showModal, setShowModal] = useState(false);
+  
 
   return (
+    <>
     <tr>
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="flex items-center">
@@ -1520,11 +1515,11 @@ const InventoryRow = ({ item, onUpdate, onPublish, generateWithAI, onDelete }) =
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.quantity}</td>
       <td className="px-6 py-4 whitespace-nowrap">
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-          {item.published ? 'Published' : 'Draft'}
+          {item.published ? 'Published' : 'Unpublished'}
         </span>
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-        <button onClick={() => setIsEditing(true)} className="text-blue-600 hover:text-blue-900">
+        <button onClick={() => setShowModal(true)} className="text-blue-600 hover:text-blue-900">
           <Edit3 className="h-4 w-4" />
         </button>
         {!item.published && (
@@ -1544,6 +1539,15 @@ const InventoryRow = ({ item, onUpdate, onPublish, generateWithAI, onDelete }) =
         </button>
       </td>
     </tr>
+    {showModal && (
+        <EditInventoryModal
+          item={item}
+          onUpdate={onUpdate}
+          generateWithAI={generateWithAI}
+          onClose={() => setShowModal(false)}
+        />
+      )}
+      </>
   );
 };
 

@@ -5,6 +5,12 @@ import mongoose from "mongoose";
 import StoreProduct from "../model/product.model.js";
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
+import express from "express";
+import OpenAI from "openai";
+
+const router = express.Router();
+const client = new OpenAI({ apiKey: "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" });
+
 
 /**
  * GET /api/products
@@ -25,7 +31,7 @@ export const updateMyProduct = async (req, res) => {
 
 
     const userId = req.user.id;
-    const { productId, name, price, description, category, sellingPrice, quantity, } = req.body;
+    const { productId, name, price, description, category, sellingPrice, quantity, storeId} = req.body;
     let imageUrl;
 
     if (req.file) {
@@ -39,11 +45,12 @@ export const updateMyProduct = async (req, res) => {
       fs.unlinkSync(req.file.path);
     }
 
-    if (!productId ) {
-      return res.status(400).json({ error: "productId is required" });
+    if (!productId || !storeId) {
+      return res.status(400).json({ error: "productId and storeId is required" });
     }
 
     const updateFields = { name, price, sellingPrice, quantity, description, category };
+    if (storeId) updateFields.storeId = storeId;
     if (imageUrl) updateFields.image = imageUrl;
 
     const updatedUser = await User.findOneAndUpdate(
@@ -53,7 +60,13 @@ export const updateMyProduct = async (req, res) => {
 );
 
 await StoreProduct.findOneAndUpdate(
-  { productId, userId }, // 👈 removed storeId from query
+  { productId, userId, storeId }, 
+  { $set: updateFields },
+  { upsert: true, new: true }
+);
+
+await WebProduct.findOneAndUpdate(
+  { productId, userId, storeId }, 
   { $set: updateFields },
   { upsert: true, new: true }
 );
@@ -168,7 +181,7 @@ export const getProducts = async (req, res) => {
       {
         params: { pageNum, pageSize },
         headers: {
-          "CJ-Access-Token": process.env.CJ_TOKEN, // Store token in .env
+          "CJ-Access-Token": `Bearer ${process.env.CJ_TOKEN}`, // Store token in .env
           "Content-Type": "application/json",
         },
         timeout: 15000, // optional timeout (15 sec)
@@ -188,6 +201,12 @@ export const getProducts = async (req, res) => {
     res.status(status).json({ error: message });
   }
 };
+
+
+
+
+
+
 
 export const addToMyProducts = async (req, res) => {
   try {

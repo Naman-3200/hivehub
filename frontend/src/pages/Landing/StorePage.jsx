@@ -7,10 +7,27 @@ const StorePage = () => {
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState([]);
 
+
+   const renderEditedWebsite = (html, css) => {
+  return (
+    <div
+      dangerouslySetInnerHTML={{
+        __html: `
+          <style>${css || ""}</style>
+          ${html}
+        `,
+      }}
+    />
+  );
+};
+
+
+  
   useEffect(() => {
+  console.log("storeData store page",storeData)
     const fetchStore = async () => {
       try {
-        const res = await fetch(`https://hivehub-y2u8.onrender.com/api/stores/${slug}`);
+        const res = await fetch(`http://localhost:8000/api/stores/slug/${slug}`);
         if (!res.ok) throw new Error("Failed to fetch store");
         const data = await res.json();
         setStoreData(data.store);
@@ -53,44 +70,26 @@ const StorePage = () => {
   };
 
   if (loading) return <p className="p-6">Loading store...</p>;
-  if (!storeData) return <p className="p-6">Store not found.</p>;
+if (!storeData) return <p className="p-6">Store not found.</p>;
 
-    // const publishedProducts = storeData.products?.filter((p) => p.published) || [];
-    const publishedProducts =
-  storeData.products?.filter((p) => p.published && p.quantity > 0) || [];
+// If edited HTML exists → render that version directly
+if (storeData.websiteHtml && storeData.websiteHtml.trim() !== "") {
+  return renderEditedWebsite(storeData.websiteHtml, storeData.websiteCss);
+}
 
+// Otherwise fallback to your default layout
+const publishedProducts = storeData.products?.filter(
+  (p) => p.published && p.quantity > 0
+) || [];
+
+
+ 
 
   return (
-    // <div className="p-6">
-    //   <h1 className="text-2xl font-bold">{storeData.name}</h1>
-    //   <p className="text-gray-600">{storeData.domain}</p>
-
-    //   {/* Products */}
-    //   <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-    //     {storeData.products?.length > 0 ? (
-    //       storeData.products.map((p) => (
-    //         <div
-    //           key={p.productId}
-    //           className="border rounded-lg p-4 shadow-sm hover:shadow-md transition"
-    //         >
-    //           <img
-    //             src={p.image}
-    //             alt={p.name}
-    //             className="h-40 w-full object-cover rounded-md mb-3"
-    //           />
-    //           <h2 className="text-lg font-semibold">{p.name}</h2>
-    //           <p className="text-sm text-gray-500">{p.category}</p>
-    //           <p className="mt-2 font-bold">${p.sellingPrice ?? p.price}</p>
-    //           <p className="text-xs text-gray-400">Stock: {p.quantity}</p>
-    //         </div>
-    //       ))
-    //     ) : (
-    //       <p className="text-gray-500">No products available.</p>
-    //     )}
-    //   </div>
-    // </div>
+    
    
 <div className="bg-gray-50 min-h-screen">
+  {console.log("storeData", storeData)}
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -98,7 +97,7 @@ const StorePage = () => {
             <div className="flex items-center">
               <h1 className="text-2xl font-bold text-gray-900">{storeData.name}</h1>
               <span className="ml-3 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full capitalize">
-                {storeData.category}
+                {storeData.name}
               </span>
             </div>
             <nav className="flex space-x-8">
