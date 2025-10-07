@@ -54,7 +54,7 @@
 
 // // //     // Call backend API to save HTML in MongoDB
 // // //     try {
-// // //     const res = await fetch(`http://localhost:8000/api/stores/${store._id}/website`, {
+// // //     const res = await fetch(`https://hivehub-1.onrender.com/api/stores/${store._id}/website`, {
 // // //       method: "PUT",
 // // //       headers: { "Content-Type": "application/json" },
 // // //       body: JSON.stringify({ websiteHtml: combinedHtml }),
@@ -225,7 +225,7 @@
 // //   //   `;
 
 // //   //   try {
-// //   //     const res = await fetch(`http://localhost:8000/api/stores/stores/${store._id}/website`, {
+// //   //     const res = await fetch(`https://hivehub-1.onrender.com/api/stores/stores/${store._id}/website`, {
 // //   //       method: "PUT",
 // //   //       headers: { "Content-Type": "application/json" },
 // //   //       body: JSON.stringify({ websiteHtml: combinedHtml }),
@@ -258,7 +258,7 @@
 // //     </html>
 // //   `;
 
-// //   await fetch(`http://localhost:8000/api/stores/stores/${store._id}/website`, {
+// //   await fetch(`https://hivehub-1.onrender.com/api/stores/stores/${store._id}/website`, {
 // //     method: "PUT",
 // //     headers: { "Content-Type": "application/json" },
 // //     body: JSON.stringify({ websiteHtml: combinedHtml }),
@@ -471,7 +471,7 @@
 
 //     try {
 //       const res = await fetch(
-//         `http://localhost:8000/api/stores/stores/${store._id}/website`,
+//         `https://hivehub-1.onrender.com/api/stores/stores/${store._id}/website`,
 //         {
 //           method: "PUT",
 //           headers: { "Content-Type": "application/json" },
@@ -718,7 +718,7 @@ const WebEditor = () => {
     if (!navStore && storeId) {
       (async () => {
         try {
-          const res = await fetch(`http://localhost:8000/api/stores/${storeId}`);
+          const res = await fetch(`https://hivehub-1.onrender.com/api/stores/${storeId}`);
           const data = await res.json();
           if (res.ok) {
             setStore(data.store);
@@ -923,7 +923,7 @@ const WebEditor = () => {
 </html>`;
 
     try {
-      const res = await fetch(`http://localhost:8000/api/stores/stores/${currentStore._id}/website`, {
+      const res = await fetch(`https://hivehub-1.onrender.com/api/stores/stores/${currentStore._id}/website`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
