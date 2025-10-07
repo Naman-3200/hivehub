@@ -27,7 +27,7 @@ const StorePage = () => {
   console.log("storeData store page",storeData)
     const fetchStore = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/stores/slug/${slug}`);
+        const res = await fetch(`https://hivehub-1.onrender.com/api/stores/slug/${slug}`);
         if (!res.ok) throw new Error("Failed to fetch store");
         const data = await res.json();
         setStoreData(data.store);
