@@ -5,8 +5,10 @@ import {
   Wand2, ShoppingCart, Star, X, Check, Upload, Globe, Settings, Loader
 } from 'lucide-react';
 
-const ViewProduct = ({ product, onClose, fetchMyProducts, selectedStore, token }) => {
+const ViewProduct = ({ product, onClose, fetchMyProducts, selectedStore, token, genProducts }) => {
   if (!product) return null;
+  console.log("Viewing product:", genProducts);
+
 
 
     const addToInventory = async (product) => {
@@ -17,7 +19,7 @@ const ViewProduct = ({ product, onClose, fetchMyProducts, selectedStore, token }
     }
       console.log("product", product);
       if (token) {
-        const response = await fetch('https://hivehub-y2u8.onrender.com/api/my-products', {
+        const response = await fetch('http://localhost:8000/api/my-products', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -31,7 +33,7 @@ const ViewProduct = ({ product, onClose, fetchMyProducts, selectedStore, token }
           price: product.originalPrice,
           image: product.image,
           category: product.category,
-          sellingPrice: product.price,
+          sellingPrice: product.sellingPrice,
           quantity: 1,
           storeId: selectedStore?._id,
           published: true   // 👈 new line
@@ -56,46 +58,7 @@ const ViewProduct = ({ product, onClose, fetchMyProducts, selectedStore, token }
   };
 
   return (
-    // <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    //   <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
-    //     {/* Header */}
-    //     <div className="flex justify-between items-center border-b px-6 py-4">
-    //       <h2 className="text-xl font-semibold">Product Details</h2>
-    //       <button onClick={onClose}>
-    //         <X className="h-5 w-5 text-gray-500 hover:text-gray-700" />
-    //       </button>
-    //     </div>
-
-    //     {/* Content */}
-    //     <div className="p-6 space-y-4">
-    //       <img
-    //         src={product.image || "https://via.placeholder.com/300x300"}
-    //         alt={product.name}
-    //         className="w-full h-64 object-cover rounded"
-    //       />
-    //       <div>
-    //         <p className="text-lg font-semibold">{product.name}</p>
-    //         <p className="text-gray-700">
-    //           {product.description || "No description available."}
-    //         </p>
-    //         <p className="text-lg font-bold text-gray-900">${product.price}</p>
-    //         <p className="text-sm text-gray-500">
-    //           Category: {product.category || "Uncategorized"}
-    //         </p>
-    //       </div>
-    //     </div>
-
-    //     {/* Footer */}
-    //     <div className="flex justify-end border-t px-6 py-4">
-    //       <button
-    //         onClick={onClose}
-    //         className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100"
-    //       >
-    //         Close
-    //       </button>
-    //     </div>
-    //   </div>
-    // </div>
+ 
 
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">

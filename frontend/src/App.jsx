@@ -13,6 +13,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import DropshipDashboard from "./pages/Landing/DropshipDashboard";
 import StorePage from "./pages/Landing/StorePage"; 
+import WebEditor from "./pages/Landing/WebEditor";
 
 // import { monitorLocalStorage } from "./pages/monitorlocalStorage";
 function App() {
@@ -20,8 +21,9 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/dashboard" element={<DropshipDashboard />} />
+      <Route path="/dashboard" element={<ProtectedRoute><DropshipDashboard /></ProtectedRoute>} />
       <Route path="/store/:slug" element={<StorePage />} />
+      <Route path="/builder/:storeId" element={<WebEditor />} />
 
             
 

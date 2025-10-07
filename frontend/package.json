@@ -19,6 +19,8 @@
     "axios": "^1.12.2",
     "crypto": "^1.0.1",
     "date-fns": "^4.1.0",
+    "grapesjs": "^0.22.13",
+    "grapesjs-preset-webpage": "^1.0.3",
     "lucide-react": "^0.544.0",
     "multer": "^2.0.2",
     "papaparse": "^5.5.3",
