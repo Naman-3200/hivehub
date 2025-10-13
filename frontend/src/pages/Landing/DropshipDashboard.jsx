@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {useNavigate} from 'react-router-dom';
 import axios from "axios";
 import { generateWebsiteContent } from "../generateWebsiteContent.jsx";
+import Dashboard from "./Dashboard.jsx"; // adjust path if needed
+
 
 
 import { 
@@ -484,176 +486,6 @@ const generateWithAI = async (field, currentValue, nameValue) => {
 };
 
 
-
-  
-//   // Generate website content with selected products
-//   const generateWebsiteContent = (store, publishedProducts) => {
-//     console.log("publish product",publishedProducts);
-//     return `<!DOCTYPE html>
-// <html lang="en">
-// <head>
-//     <meta charset="UTF-8">
-//     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-//     <title>${store.name} - Online Store</title>
-//     <script src="https://cdn.tailwindcss.com"></script>
-//     <style>
-//         .product-card:hover { transform: translateY(-2px); transition: transform 0.2s; }
-//         .hero-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-//         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-//     </style>
-// </head>
-// <body class="bg-gray-50">
-//     <header class="bg-white shadow-sm">
-//         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-//             <div class="flex justify-between items-center h-16">
-//                 <div class="flex items-center">
-//                     <h1 class="text-2xl font-bold text-gray-900">${store.name}</h1>
-//                     <span class="ml-3 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full capitalize">${store.category}</span>
-//                 </div>
-//                 <nav class="flex space-x-8">
-//                     <a href="#products" class="text-gray-600 hover:text-gray-900">Products</a>
-//                     <div id="cart-indicator" class="relative">
-//                         <span class="text-gray-600">🛒</span>
-//                         <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-1 min-w-[16px] h-4 flex items-center justify-center hidden">0</span>
-//                     </div>
-//                 </nav>
-//             </div>
-//         </div>
-//     </header>
-//     <section class="hero-gradient text-white py-20">
-//         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-//             <h2 class="text-4xl font-bold mb-4">Welcome to ${store.name}</h2>
-//             <p class="text-xl mb-8">${store.description || `Your trusted ${store.category} store with amazing products!`}</p>
-//             <a href="#products" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">Shop Now</a>
-//         </div>
-//     </section>
-//     <section id="products" class="py-16">
-//         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-//             <h2 class="text-3xl font-bold text-gray-900 text-center mb-12">Our Products</h2>
-            
-//             ${publishedProducts.length === 0 ? `
-//                 <div class="text-center py-12">
-//                     <div class="text-6xl mb-4">📦</div>
-//                     <h3 class="text-xl font-semibold text-gray-900 mb-2">Coming Soon!</h3>
-//                     <p class="text-gray-600">We're adding amazing products to our store. Check back soon!</p>
-//                 </div>
-//             ` : `
-//                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-//                     ${publishedProducts.map(product => `
-//                         <div class="product-card bg-white rounded-lg shadow-md overflow-hidden">
-//                             <img src="${product.image}" alt="${product.name}" class="w-full h-48 object-cover" onerror="this.src='https://via.placeholder.com/300x300/4F46E5/white?text=Product'">
-//                             <div class="p-6">
-//                                 <h3 class="font-semibold text-gray-900 mb-2 line-clamp-2">${product.name}</h3>
-//                                 <p class="text-gray-600 text-sm mb-3 line-clamp-2">${product.description}</p>
-//                                 <div class="flex items-center justify-between mb-3">
-//                                     <div>
-//                                         <span class="text-lg font-bold text-gray-900">$${((product?.sellingPrice || product?.price) && !isNaN(product?.sellingPrice || product?.price) ? (product?.sellingPrice || product.price)?.toFixed(2) : '0.00')}</span>
-//                                         ${product?.price ? `<span class="ml-2 text-sm text-gray-500 line-through">$${product?.price?.toFixed(2)}</span>` : ''}
-//                                     </div>
-//                                 </div>
-//                                 <button class="add-to-cart-btn w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors" data-product-name="${product.name}" data-product-price="${(product.sellingPrice || product.price).toFixed(2)}">Add to Cart</button>
-//                                 <div class="mt-3 flex items-center">
-//                                     <div class="flex items-center">
-//                                         ${Array(5).fill(0).map((_, i) => `<svg class="w-4 h-4 ${i < Math.floor(product.rating || 4) ? 'text-yellow-400' : 'text-gray-300'}" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>`).join('')}
-//                                     </div>
-//                                     <span class="ml-2 text-sm text-gray-600">(${product.reviews || 0})</span>
-//                                 </div>
-//                                 ${product.isFreeShipping ? '<div class="mt-2"><span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Free Shipping</span></div>' : ''}
-//                             </div>
-//                         </div>
-//                     `).join('')}
-//                 </div>
-//             `}
-//         </div>
-//     </section>
-//     <script>
-//         let cart = [];
-//         const cartCountElement = document.getElementById('cart-count');
-        
-//         function updateCartCount() {
-//             const count = cart.length;
-//             if (count > 0) {
-//                 cartCountElement.textContent = count;
-//                 cartCountElement.classList.remove('hidden');
-//             } else {
-//                 cartCountElement.classList.add('hidden');
-//             }
-//         }
-        
-//         document.addEventListener('click', function(e) {
-//             if (e.target.classList.contains('add-to-cart-btn')) {
-//                 e.preventDefault();
-//                 const productName = e.target.dataset.productName;
-//                 const productPrice = e.target.dataset.productPrice;
-                
-//                 cart.push({name: productName, price: productPrice});
-                
-//                 e.target.textContent = 'Added!';
-//                 e.target.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-//                 e.target.classList.add('bg-green-600');
-                
-//                 updateCartCount();
-                
-//                 setTimeout(() => {
-//                     e.target.textContent = 'Add to Cart';
-//                     e.target.classList.remove('bg-green-600');
-//                     e.target.classList.add('bg-blue-600', 'hover:bg-blue-700');
-//                 }, 2000);
-                
-//                 const toast = document.createElement('div');
-//                 toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-//                 toast.textContent = \`Added "\${productName}" to cart!\`;
-//                 document.body.appendChild(toast);
-                
-//                 setTimeout(() => toast.remove(), 3000);
-//             }
-//         });
-//     </script>
-        
-//     <footer class="bg-gray-900 text-white py-12">
-//         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-//             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-//                 <div>
-//                     <h3 class="text-lg font-semibold mb-4">${store.name}</h3>
-//                     <p class="text-gray-400">Your trusted online ${store.category} store.</p>
-//                 </div>
-//                 <div>
-//                     <h4 class="font-semibold mb-4">Quick Links</h4>
-//                     <ul class="space-y-2 text-gray-400">
-//                         <li><a href="#products" class="hover:text-white">Products</a></li>
-//                         <li><a href="#about" class="hover:text-white">About Us</a></li>
-//                         <li><a href="#contact" class="hover:text-white">Contact</a></li>
-//                     </ul>
-//                 </div>
-//                 <div>
-//                     <h4 class="font-semibold mb-4">Support</h4>
-//                     <ul class="space-y-2 text-gray-400">
-//                         <li><a href="#" class="hover:text-white">Help Center</a></li>
-//                         <li><a href="#" class="hover:text-white">Returns</a></li>
-//                         <li><a href="#" class="hover:text-white">Shipping Info</a></li>
-//                     </ul>
-//                 </div>
-//                 <div>
-//                     <h4 class="font-semibold mb-4">Contact Info</h4>
-//                     <div class="text-gray-400 space-y-2">
-//                         <p>📧 info@${store.name.toLowerCase().replace(/\s+/g, '')}.com</p>
-//                         <p>📞 +1 (555) 123-4567</p>
-//                         <p>📍 123 Business St, City, State</p>
-//                     </div>
-//                 </div>
-//             </div>
-//             <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-//                 <p>&copy; 2024 ${store.name}. All rights reserved. | Powered by DropShip Pro</p>
-//             </div>
-//         </div>
-//     </footer>
-// </body>
-// </html>`;
-//   };
-
-
-
-
     const createLocalWebsite = (store) => {
     console.log("store store",store);
     const publishedProducts = myProducts.filter(
@@ -662,11 +494,7 @@ const generateWithAI = async (field, currentValue, nameValue) => {
 
     console.log("publishedProducts",publishedProducts);
     const websiteContent = generateWebsiteContent(store, publishedProducts);
-    // const response =  fetch(`https://hivehub-1.onrender.com/api/stores/${store._id}/html`);
-    // const html =  response.text();
-    // const blob = new Blob([html], { type: "text/html" });
-    // const url = URL.createObjectURL(blob);
-    // window.open(url, "_blank");
+
     const blob = new Blob([websiteContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     
@@ -684,10 +512,6 @@ const generateWithAI = async (field, currentValue, nameValue) => {
       const res = await fetch("https://hivehub-1.onrender.com/api/gen-products");
       const data = await res.json();
     const products = Array.isArray(data) ? data : data.products || [];
-
-    // setNewArrivals(products);
-    //   if (!res.ok) throw new Error("Failed to load generated products");
-      // const data = await res.json();
 
       setGenProducts(Array.isArray(data) ? data : data.products || []);
       console.log("Generated products fetched:", products);
@@ -712,32 +536,6 @@ const generateWithAI = async (field, currentValue, nameValue) => {
 }, [stores]);
 
 
-
-  // const openStoreWebsite = (store) => {
-  //   // const url = createLocalWebsite(store);
-
-  // const url = store.customDomain
-  //   ? (store.customDomain.startsWith("http")
-  //       ? store.customDomain
-  //       : `https://${store.customDomain}`)
-  //   : store.domain;
-
-  // if (url) {
-  //   window.open(url, "_blank");
-  // } else {
-  //   alert("No domain found for this store");
-  // }
-
-  //   // window.open(store.domain, '_blank');
-  // };
-
-//   const openStoreWebsite = (store) => {
-//   const domainToOpen = store.domainVerified && store.customDomain
-//     ? (store.customDomain.startsWith("http") ? store.customDomain : `https://${store.customDomain}`)
-//     : store.domain; // fallback default domain
-//   window.open(domainToOpen, "_blank");
-// };
-
   const openStoreWebsite = (store) => {
   const slug = store.customDomain
     ? store.customDomain.replace(/^https?:\/\//, "")
@@ -754,12 +552,12 @@ const generateWithAI = async (field, currentValue, nameValue) => {
   );
   const currentProducts = searchQuery ? filteredProducts : getProductsByCategory(activeTab);
 
-  const dashboardMetrics = {
-    totalRevenue: myProducts.reduce((sum, item) => sum + (item.published ? (item.sellingPrice || 0) * 5 : 0), 0),
-    totalOrders: myProducts.filter(item => item.published).length * 3,
-    totalProducts: myProducts.filter(item => item.published).length,
-    storeViews: selectedStore ? 1247 : 0
-  };
+  // const dashboardMetrics = {
+  //   totalRevenue: myProducts.reduce((sum, item) => sum + (item.published ? (item.sellingPrice || 0) * 5 : 0), 0),
+  //   totalOrders: myProducts.filter(item => item.published).length * 3,
+  //   totalProducts: myProducts.filter(item => item.published).length,
+  //   storeViews: selectedStore ? 1247 : 0
+  // };
 
 
 
@@ -787,7 +585,7 @@ const generateWithAI = async (field, currentValue, nameValue) => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {currentView === 'dashboard' && (
+        {/* {currentView === 'dashboard' && (
           <div>
             <div className="mb-8">
               <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
@@ -832,7 +630,18 @@ const generateWithAI = async (field, currentValue, nameValue) => {
               </div>
             </div>
           </div>
+        )} */}
+
+        {currentView === "dashboard" && (
+          <Dashboard
+            stores={stores}
+            selectedStore={selectedStore}
+            myProducts={myProducts}
+            allProductsData={allProductsData}
+            loading={loading}
+          />
         )}
+
 
 {console.log("Store data:", stores)}
         {currentView === 'stores' && (
@@ -1396,7 +1205,7 @@ const generateWithAI = async (field, currentValue, nameValue) => {
   </div>
         )}
 
-        {currentView === 'community' && (
+        {/* {currentView === 'community' && (
   <div>
     <h1 className="text-2xl font-bold text-gray-900 mb-6">Community</h1>
 
@@ -1418,7 +1227,10 @@ const generateWithAI = async (field, currentValue, nameValue) => {
       </div>
     </div>
   </div>
-        )}
+        )} */}
+
+        {currentView === 'community' && <Community />}
+
 
       </main>
 
@@ -1492,6 +1304,7 @@ const generateWithAI = async (field, currentValue, nameValue) => {
 };
 
 import EditInventoryModal from "./EditInventoryModal";
+import Community from './Community.jsx';
 const InventoryRow = ({ item, onUpdate, onPublish, generateWithAI, onDelete }) => {
   console.log("inventory item", item);
 

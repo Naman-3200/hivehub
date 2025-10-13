@@ -113,6 +113,9 @@ import productRoutes from "./routes/productRoutes.js";
 import authRoutes from "./routes/auth.route.js";
 import storeRoutes from "./routes/store.route.js";
 import genProductRoutes from "./routes/genproduct.route.js";
+import storeAuthRoutes from "./routes/storeauth.routes.js";
+import communityRoutes from "./routes/community.routes.js";
+
 
 const app = express();
 
@@ -140,6 +143,9 @@ app.use("/api", productRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/stores", storeRoutes);
 app.use("/api", genProductRoutes);
+app.use("/api/store-users", storeAuthRoutes);
+app.use("/api/community", communityRoutes);
+
 
 // ---------- Handle Custom Domain ----------
 app.use(async (req, res, next) => {
