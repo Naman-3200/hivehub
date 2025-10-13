@@ -14,6 +14,10 @@ import ResetPassword from "./pages/ResetPassword";
 import DropshipDashboard from "./pages/Landing/DropshipDashboard";
 import StorePage from "./pages/Landing/StorePage"; 
 import WebEditor from "./pages/Landing/WebEditor";
+import StoreHome from "./pages/Landing/StoreHome";
+import StoreLogin from "./pages/Landing/StoreLogin";
+import StoreRegister from "./pages/Landing/StoreRegister";
+import Dashboard from "./pages/Landing/Dashboard";
 
 // import { monitorLocalStorage } from "./pages/monitorlocalStorage";
 function App() {
@@ -24,6 +28,11 @@ function App() {
       <Route path="/dashboard" element={<ProtectedRoute><DropshipDashboard /></ProtectedRoute>} />
       <Route path="/store/:slug" element={<StorePage />} />
       <Route path="/builder/:storeId" element={<WebEditor />} />
+      <Route path="/dashboardpage" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+
+      <Route path="/store/:storeId" element={<StoreHome />} />
+        <Route path="/store-login/:storeId" element={<StoreLogin />} />
+        <Route path="/store-register/:storeId" element={<StoreRegister />} />
 
             
 
