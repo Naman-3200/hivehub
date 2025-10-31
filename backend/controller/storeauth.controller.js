@@ -34,10 +34,10 @@ export const registerStoreUser = async (req, res) => {
 export const loginStoreUser = async (req, res) => {
   try {
     const { email, password, storeId } = req.body;
-    if (!email || !password || !storeId)
+    if (!email || !password )
       return res.status(400).json({ message: "All fields are required" });
 
-    const user = await StoreUser.findOne({ email, storeId });
+    const user = await StoreUser.findOne({ email });
     if (!user)
       return res.status(400).json({ message: "User not found for this store" });
 

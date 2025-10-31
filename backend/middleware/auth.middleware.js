@@ -87,6 +87,7 @@
 
 
 import jwt from "jsonwebtoken";
+import User from "../model/user.model.js";
 
 export function authenticateToken(req, res, next) {
   console.log("🔍 Auth Middleware: Starting authentication");
@@ -135,59 +136,98 @@ export function authenticateToken(req, res, next) {
     console.log("❌ Cannot decode token payload:", decodeError.message);
   }
 
-  jwt.verify(token, jwtSecret, (err, user) => {
-    if (err) {
-      console.log("❌ JWT verification failed:", err.name, err.message);
-      console.log("❌ Full error:", err);
+  // jwt.verify(token, jwtSecret, (err, user) => {
+  //   if (err) {
+  //     console.log("❌ JWT verification failed:", err.name, err.message);
+  //     console.log("❌ Full error:", err);
       
-      // Detailed error analysis
-      if (err.name === 'TokenExpiredError') {
-        console.log("❌ Token expired at:", err.expiredAt);
-        console.log("❌ Current time:", new Date());
-        return res.status(403).json({ 
-          message: "Token expired", 
-          expiredAt: err.expiredAt,
-          currentTime: new Date()
-        });
-      } else if (err.name === 'JsonWebTokenError') {
-        console.log("❌ JWT Error details:", err.message);
+  //     // Detailed error analysis
+  //     if (err.name === 'TokenExpiredError') {
+  //       console.log("❌ Token expired at:", err.expiredAt);
+  //       console.log("❌ Current time:", new Date());
+  //       return res.status(403).json({ 
+  //         message: "Token expired", 
+  //         expiredAt: err.expiredAt,
+  //         currentTime: new Date()
+  //       });
+  //     } else if (err.name === 'JsonWebTokenError') {
+  //       console.log("❌ JWT Error details:", err.message);
         
-        // Try with different secret to test
-        if (err.message.includes('invalid signature')) {
-          console.log("❌ SIGNATURE MISMATCH - This means JWT_SECRET is different!");
-          console.log("❌ Secret being used:", jwtSecret);
-        }
+  //       // Try with different secret to test
+  //       if (err.message.includes('invalid signature')) {
+  //         console.log("❌ SIGNATURE MISMATCH - This means JWT_SECRET is different!");
+  //         console.log("❌ Secret being used:", jwtSecret);
+  //       }
         
-        return res.status(403).json({ 
-          message: "Invalid token", 
-          error: err.message,
-          secretUsed: jwtSecret
-        });
-      } else if (err.name === 'NotBeforeError') {
-        console.log("❌ Token not active until:", err.date);
-        return res.status(403).json({ 
-          message: "Token not yet valid", 
-          notBefore: err.date 
-        });
-      }
+  //       return res.status(403).json({ 
+  //         message: "Invalid token", 
+  //         error: err.message,
+  //         secretUsed: jwtSecret
+  //       });
+  //     } else if (err.name === 'NotBeforeError') {
+  //       console.log("❌ Token not active until:", err.date);
+  //       return res.status(403).json({ 
+  //         message: "Token not yet valid", 
+  //         notBefore: err.date 
+  //       });
+  //     }
       
-      return res.status(403).json({ 
-        message: "Invalid token", 
-        error: err.message,
-        errorName: err.name
+  //     return res.status(403).json({ 
+  //       message: "Invalid token", 
+  //       error: err.message,
+  //       errorName: err.name
+  //     });
+  //   }
+    
+  //   console.log("✅ Token verified successfully!");
+  //   console.log("✅ User ID:", user.id);
+  //   console.log("✅ User email:", user.email);
+  //   console.log("✅ User role:", user.role);
+  //   console.log("✅ Token issued at:", new Date(user.iat * 1000));
+  //   console.log("✅ Token expires at:", new Date(user.exp * 1000));
+
+
+  //   if (user.isDisabled) {
+  //     return res.status(403).json({
+  //       message: "Your account has been disabled. Please contact support.",
+  //     });
+  //   }
+    
+  //   req.user = user;
+  //   next();
+  // });
+
+  jwt.verify(token, jwtSecret, async (err, decoded) => {
+    console.log("🔍 Decoded token after verification attempt:", decoded) ;
+  if (err) {
+    console.log("❌ JWT verification failed:", err.message);
+    return res.status(403).json({ message: "Invalid or expired token" });
+  }
+
+  try {
+    const dbUser = await User.findById(decoded.id || decoded._id);
+
+    console.log("🔍 Fetched user from DB:", dbUser);
+
+    if (!dbUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (dbUser.disabled) {
+      console.log(`🚫 User ${dbUser.email} is disabled`);
+      return res.status(403).json({
+        message: "Your account has been disabled. Please contact support.",
       });
     }
-    
-    console.log("✅ Token verified successfully!");
-    console.log("✅ User ID:", user.id);
-    console.log("✅ User email:", user.email);
-    console.log("✅ User role:", user.role);
-    console.log("✅ Token issued at:", new Date(user.iat * 1000));
-    console.log("✅ Token expires at:", new Date(user.exp * 1000));
-    
-    req.user = user;
+
+    req.user = dbUser; // pass full fresh user document
     next();
-  });
+  } catch (dbErr) {
+    console.error("❌ DB fetch error:", dbErr);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 }
 
 export function authorizeRole(...allowedRoles) {

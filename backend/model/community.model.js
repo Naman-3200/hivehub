@@ -1,3 +1,4 @@
+// models/community.model.js
 import mongoose from "mongoose";
 
 const commentSchema = new mongoose.Schema(
@@ -17,6 +18,14 @@ const communityPostSchema = new mongoose.Schema(
     content: { type: String, required: true },
     imageUrl: { type: String, default: "" },
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+
+    // NEW: who can see this post
+    visibility: {
+      type: String,
+      enum: ["all", "admins", "superadmins"],
+      default: "all"
+    },
+
     comments: [commentSchema]
   },
   { timestamps: true }

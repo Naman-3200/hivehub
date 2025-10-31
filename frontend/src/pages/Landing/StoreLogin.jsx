@@ -12,7 +12,7 @@ const StoreLogin = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("https://hivehub-1.onrender.com/api/store-users/login", {
+      const res = await fetch("http://localhost:8000/api/store-users/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...formData, storeId }),

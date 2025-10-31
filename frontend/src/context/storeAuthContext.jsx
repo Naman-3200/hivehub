@@ -6,7 +6,7 @@ export const AuthContexts = createContext();
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => localStorage.getItem("token") || null);
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user") || "null"));
-  const baseURL =  "https://hivehub-1.onrender.com";
+  const baseURL =  "http://localhost:8000";
 
   useEffect(() => {
     if (token) {

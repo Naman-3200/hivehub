@@ -6,11 +6,10 @@ import User from "../model/user.model.js";
 
 export const createPost = async (req, res) => {
   try {
-    const { content } = req.body;
+    const { content, visibility = "all" } = req.body;
     const userId = req.user.id;
+
     let imageUrl = "";
-
-
     if (req.file) {
       const upload = await cloudinary.uploader.upload(req.file.path);
       imageUrl = upload.secure_url;
@@ -23,7 +22,8 @@ export const createPost = async (req, res) => {
       userId,
       userName: user.name,
       content,
-      imageUrl
+      imageUrl,
+      visibility, // "all" | "admins" | "superadmins"
     });
 
     res.status(201).json(post);
@@ -35,9 +35,15 @@ export const createPost = async (req, res) => {
 
 export const getAllPosts = async (req, res) => {
   try {
-    const posts = await CommunityPost.find()
-      .populate("userId", "name profilePicture")
+    const role = req.user?.role || "user";
+    const vis = role === "superadmin" ? ["all", "admins", "superadmins"]
+             : role === "admin"      ? ["all", "admins"]
+             :                        ["all"];
+
+    const posts = await CommunityPost.find({ visibility: { $in: vis } })
+      .populate("userId", "name profilePicture role")
       .sort({ createdAt: -1 });
+
     res.status(200).json(posts);
   } catch (err) {
     res.status(500).json({ message: "Error fetching posts" });
