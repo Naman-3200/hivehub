@@ -18,7 +18,7 @@
 //   const fetchPosts = async () => {
 //     try {
 //       const token = localStorage.getItem("token");
-//       const res = await axios.get("http://localhost:8000/api/community", {
+//       const res = await axios.get("https://hivehub-1.onrender.com/api/community", {
 //         headers: { Authorization: `Bearer ${token}` },
 //       });
 //       setPosts(res.data);
@@ -33,7 +33,7 @@
 //     try {
 //       const token = localStorage.getItem("token");
 //       const res = await axios.post(
-//         "http://localhost:8000/api/community",
+//         "https://hivehub-1.onrender.com/api/community",
 //         { content },
 //         { headers: { Authorization: `Bearer ${token}` } }
 //       );
@@ -132,7 +132,7 @@
 
 //   const fetchUser = async () => {
 //     try {
-//       const res = await axios.get("http://localhost:8000/user/me"); // endpoint to get current user
+//       const res = await axios.get("https://hivehub-1.onrender.com/user/me"); // endpoint to get current user
 //       setUser(res.data);
 //       fetchPosts();
 //     } catch (err) {
@@ -144,7 +144,7 @@
 
 //   const fetchPosts = async () => {
 //     try {
-//       const res = await axios.get("http://localhost:8000/api/community");
+//       const res = await axios.get("https://hivehub-1.onrender.com/api/community");
 //       setPosts(res.data);
 //     } catch (err) {
 //       console.error("Error fetching posts:", err);
@@ -158,7 +158,7 @@
 //       formData.append("content", content);
 //       if (image) formData.append("image", image);
 
-//       await axios.post("http://localhost:8000/api/community", formData, {
+//       await axios.post("https://hivehub-1.onrender.com/api/community", formData, {
 //         headers: { "Content-Type": "multipart/form-data" },
 //       });
 
@@ -174,7 +174,7 @@
 
 //   const handleLike = async (postId) => {
 //     try {
-//       await axios.post("http://localhost:8000/api/community/like", { postId });
+//       await axios.post("https://hivehub-1.onrender.com/api/community/like", { postId });
 //       fetchPosts();
 //     } catch (err) {
 //       console.error("Error liking post:", err);
@@ -183,7 +183,7 @@
 
 //   const handleComment = async (postId, commentText) => {
 //     try {
-//       await axios.post("http://localhost:8000/api/community/comment", { postId, commentText });
+//       await axios.post("https://hivehub-1.onrender.com/api/community/comment", { postId, commentText });
 //       fetchPosts();
 //     } catch (err) {
 //       console.error("Error commenting:", err);
@@ -448,7 +448,7 @@ const Community = () => {
 
   const fetchUser = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/user/me");
+      const res = await axios.get("https://hivehub-1.onrender.com/user/me");
       setUser(res.data);
       fetchPosts();
     } catch (err) {
@@ -460,7 +460,7 @@ const Community = () => {
 
   const fetchPosts = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/community");
+      const res = await axios.get("https://hivehub-1.onrender.com/api/community");
       setPosts(res.data);
     } catch (err) {
       console.error("Error fetching posts:", err);
@@ -475,7 +475,7 @@ const Community = () => {
       formData.append("visibility", visibility); // ✅ Added visibility
       if (image) formData.append("image", image);
 
-      await axios.post("http://localhost:8000/api/community", formData, {
+      await axios.post("https://hivehub-1.onrender.com/api/community", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -490,12 +490,12 @@ const Community = () => {
   };
 
   const handleLike = async (postId) => {
-    await axios.post("http://localhost:8000/api/community/like", { postId });
+    await axios.post("https://hivehub-1.onrender.com/api/community/like", { postId });
     fetchPosts();
   };
 
   const handleComment = async (postId, commentText) => {
-    await axios.post("http://localhost:8000/api/community/comment", {
+    await axios.post("https://hivehub-1.onrender.com/api/community/comment", {
       postId,
       commentText,
     });

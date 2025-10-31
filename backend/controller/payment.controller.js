@@ -16,7 +16,7 @@
 //     }
 
 //     // Redirect URL after successful payment
-//     const redirectUrl = "http://localhost:5173/payment-success";
+//     const redirectUrl = "https://hivehub-tr8u.vercel.app/payment-success";
 
 //     // Generate hosted checkout link (no API key required)
 //     const checkoutUrl = `https://whop.com/checkout/${planId}?redirect_url=${encodeURIComponent(

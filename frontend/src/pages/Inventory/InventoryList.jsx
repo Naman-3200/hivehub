@@ -10,7 +10,7 @@ export default function InventoryList() {
   const [active, setActive] = useState(null);
 
   const load = async () => {
-    const res = await axios.get("http://localhost:8000/api/inventory", {
+    const res = await axios.get("https://hivehub-1.onrender.com/api/inventory", {
       headers: { Authorization: `Bearer ${token}` },
     });
     // You can implement GET /api/inventory (list) similarly; if not, fetch from your existing list endpoint
@@ -53,7 +53,7 @@ export default function InventoryList() {
                       className="px-3 py-1 rounded bg-gray-800 text-white"
                       onClick={async () => {
                         // ensure we fetch populated stores for modal
-                        const r = await axios.get(`http://localhost:8000/api/inventory/${it._id}`, {
+                        const r = await axios.get(`https://hivehub-1.onrender.com/api/inventory/${it._id}`, {
                           headers: { Authorization: `Bearer ${token}` },
                         });
                         setActive(r.data.item);

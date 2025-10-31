@@ -197,14 +197,14 @@ const SuperAdminDashboard = () => {
   const [subs, setSubs] = useState([]);
 
   const fetchOverview = async () => {
-    const res = await axios.get("http://localhost:8000/api/admin/overview", {
+    const res = await axios.get("https://hivehub-1.onrender.com/api/admin/overview", {
       headers: { Authorization: `Bearer ${token}` }
     });
     setOverview(res.data);
   };
 
   const fetchSubs = async () => {
-    const res = await axios.get("http://localhost:8000/api/admin/subscriptions", {
+    const res = await axios.get("https://hivehub-1.onrender.com/api/admin/subscriptions", {
       headers: { Authorization: `Bearer ${token}` }
     });
     setSubs(res.data || []);

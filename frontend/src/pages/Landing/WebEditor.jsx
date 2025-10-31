@@ -28,7 +28,7 @@ const WebEditor = () => {
     if (!navStore && storeId) {
       (async () => {
         try {
-          const res = await fetch(`http://localhost:8000/api/stores/${storeId}`);
+          const res = await fetch(`https://hivehub-1.onrender.com/api/stores/${storeId}`);
           const data = await res.json();
           if (res.ok) {
             setStore(data.store);
@@ -233,7 +233,7 @@ const WebEditor = () => {
 </html>`;
 
     try {
-      const res = await fetch(`http://localhost:8000/api/stores/stores/${currentStore._id}/website`, {
+      const res = await fetch(`https://hivehub-1.onrender.com/api/stores/stores/${currentStore._id}/website`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -377,7 +377,7 @@ const WebEditor = () => {
 
     let currentMode = "login";
 
-    const API_BASE = "http://localhost:8000/api/user"; // 🔁 Replace with your backend domain
+    const API_BASE = "https://hivehub-1.onrender.com/api/user"; // 🔁 Replace with your backend domain
 
     function openModal(mode) {
       currentMode = mode;

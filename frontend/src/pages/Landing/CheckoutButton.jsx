@@ -5,7 +5,7 @@ import axios from "axios";
 const CheckoutButton = ({ planId }) => {
   const handleCheckout = async () => {
     try {
-      const res = await axios.post("http://localhost:8000/api/whop/checkout", {
+      const res = await axios.post("https://hivehub-1.onrender.com/api/whop/checkout", {
         planId,
       });
       window.location.href = res.data.purchaseUrl; // Redirect to Whop checkout
