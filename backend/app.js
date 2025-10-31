@@ -115,6 +115,17 @@ import storeRoutes from "./routes/store.route.js";
 import genProductRoutes from "./routes/genproduct.route.js";
 import storeAuthRoutes from "./routes/storeauth.routes.js";
 import communityRoutes from "./routes/community.routes.js";
+import dashboardRoutes from "./routes/dashboard.routes.js";
+import orderRoutes from "./routes/order.routes.js";
+import paymentRoutes from "./routes/payment.route.js";
+import storeUsersRoutes from "./routes/storeusers.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
+import inventoryRoutes from "./routes/inventory.routes.js";
+
+
+
+
+
 
 
 const app = express();
@@ -145,6 +156,19 @@ app.use("/api/stores", storeRoutes);
 app.use("/api", genProductRoutes);
 app.use("/api/store-users", storeAuthRoutes);
 app.use("/api/community", communityRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api", paymentRoutes); // Payment related routes
+app.use("/api/store-users/manage", storeUsersRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/inventory", inventoryRoutes);
+
+
+
+
+
+
+
 
 
 // ---------- Handle Custom Domain ----------

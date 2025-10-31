@@ -1,376 +1,597 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import {
-  AreaChart,
-  Area,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
+  CartesianGrid,
   Legend,
+  ResponsiveContainer,
 } from "recharts";
-import { DollarSign, ShoppingCart, Package, Eye } from "lucide-react";
 
-// Dashboard.jsx
-// Revised to match the UI inspiration you attached and to compute the exact metrics
-// you asked for (products bought across stores, total revenue, total stores, total products revenue, orders).
-// Key features:
-// - Accepts optional props `myProducts` and `selectedStore` (to integrate with your existing nav code)
-// - Robust fetching of /api/stores, /api/products, /api/orders with per-endpoint error reporting
-// - `useMockData` to render locally when backend isn't available
-// - Tailwind-ready layout that visually matches the provided screenshot (cards + big charts + list)
-
-const COLORS = ["#10B981", "#F59E0B", "#EF4444", "#3B82F6"];
-export default function Dashboard({
-  baseUrl = "https://hivehub-1.onrender.com", // adjust if your backend is hosted elsewhere
-  summaryEndpoint = null,
-  useMockData = false,
-  myProducts = null, // optional array (if your nav already has products)
-  selectedStore = null, // optional selected store
-}) {
+const Dashboard = () => {
+  const token = localStorage.getItem("token");
   const [stores, setStores] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-let token = localStorage.getItem("token");
+  const [filters, setFilters] = useState({
+    start: "",
+    end: "",
+    storeId: "",
+  });
+  const [metrics, setMetrics] = useState(null);
+  const [timeseries, setTimeseries] = useState([]);
+  const [topStores, setTopStores] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // prefer using passed-in product list if available (less network calls)
-    if (myProducts && Array.isArray(myProducts)) {
-      setProducts(myProducts);
-    }
-    fetchAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchStores();
+    fetchKPIs(); // Initial load
   }, []);
 
-  const fullUrl = (path) => (baseUrl ? `${baseUrl}${path}` : path);
-
-  const fetchJsonSafe = async (u, headers) => {
+  // ✅ Fetch store list
+  const fetchStores = async () => {
     try {
-      const res = await fetch(u, { headers });
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "(no body)");
-        return { ok: false, status: res.status, statusText: res.statusText, body: txt };
-      }
-      const json = await res.json();
-      return { ok: true, json };
+      const res = await axios.get("http://localhost:8000/api/stores", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = res.data;
+      if (Array.isArray(data)) setStores(data);
+      else if (Array.isArray(data.stores)) setStores(data.stores);
+      else setStores([]);
     } catch (err) {
-      return { ok: false, error: err.message || String(err) };
+      console.error("Error fetching stores:", err);
+      setStores([]);
     }
   };
 
-  const fetchAll = async () => {
+  // ✅ Fetch KPI metrics
+  const fetchKPIs = async () => {
     setLoading(true);
-    setError(null);
-
-    if (useMockData) {
-      const mockStores = [
-        { id: "s1", name: "Main Store" },
-        { id: "s2", name: "Outlet" },
-      ];
-      const mockProducts = [
-        { id: "p1", name: "Blue Shirt", price: 29.99, image: "", storeId: "s1", published: true },
-        { id: "p2", name: "Red Hat", price: 15.0, image: "", storeId: "s2", published: true },
-      ];
-      const now = Date.now();
-      const mockOrders = [
-        { id: "o1", productId: "p1", storeId: "s1", totalPrice: 59.98, quantity: 2, createdAt: new Date(now - 1000 * 60 * 60 * 3).toISOString() },
-        { id: "o2", productId: "p2", storeId: "s2", totalPrice: 15.0, quantity: 1, createdAt: new Date(now - 1000 * 60 * 60 * 1).toISOString() },
-      ];
-
-      setStores(mockStores);
-      if (!myProducts) setProducts(mockProducts);
-      setOrders(mockOrders);
-      setLoading(false);
-      return;
-    }
-
     try {
-      const headers = token
-        ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
-        : { "Content-Type": "application/json" };
+      const params = {};
+      if (filters.start) params.start = filters.start;
+      if (filters.end) params.end = filters.end;
+      if (filters.storeId) params.storeId = filters.storeId;
 
-      if (summaryEndpoint) {
-        const res = await fetchJsonSafe(fullUrl(summaryEndpoint), headers);
-        if (res.ok) {
-          const payload = res.json;
-          setStores(payload.stores || []);
-          if (!myProducts) setProducts(payload.products || []);
-          setOrders(payload.orders || []);
-          setLoading(false);
-          return;
-        }
-      }
+      const res = await axios.get("http://localhost:8000/api/dashboard/kpis", {
+        headers: { Authorization: `Bearer ${token}` },
+        params,
+      });
 
-      const endpoints = [
-        { key: "stores", path: "/api/stores" },
-        { key: "products", path: "/api/products" },
-        { key: "orders", path: "/api/orders" },
-      ];
-
-      const results = await Promise.all(endpoints.map((e) => fetchJsonSafe(fullUrl(e.path), headers)));
-
-      const failed = [];
-
-      if (results[0].ok) setStores(results[0].json || []);
-      else failed.push({ endpoint: "/api/stores", reason: results[0].error || `${results[0].status} ${results[0].statusText}` });
-
-      if (!myProducts) {
-        if (results[1].ok) setProducts(results[1].json || []);
-        else failed.push({ endpoint: "/api/products", reason: results[1].error || `${results[1].status} ${results[1].statusText}` });
-      }
-
-    //   if (results[2].ok) setOrders(results[2].json || []);
-    //   else failed.push({ endpoint: "/api/orders", reason: results[2].error || `${results[2].status} ${results[2].statusText}` });
-
-      if (failed.length > 0) {
-        const msg = `Failed to fetch: ${failed.map((f) => `${f.endpoint} (${f.reason})`).join(", ")}`;
-        console.warn(msg);
-        setError(msg);
-      }
+      const data = res.data || {};
+      console.log("Fetched KPI data:", data);
+      setMetrics(data.metrics || {});
+      setTimeseries(data.timeseries || []);
+      setTopStores(data.topStores || []);
     } catch (err) {
-      console.error(err);
-      setError(err.message || String(err));
+      console.error("Error fetching KPIs:", err);
+      setMetrics(null);
+      setTimeseries([]);
+      setTopStores([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Compute metrics
-  const totals = useMemo(() => {
-    const totalStores = stores.length;
-    const totalProducts = products.length;
-    const totalOrders = orders.length;
-    const totalRevenue = orders.reduce((s, o) => s + Number(o.totalPrice ?? o.amount ?? 0), 0);
+  // ✅ Handle input change for filters
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters({ ...filters, [name]: value });
+  };
 
-    // products bought per store
-    const productsBoughtByStore = {};
-    orders.forEach((o) => {
-      const sid = o.storeId || o.store_id || (products.find((p) => p.id === o.productId || p._id === o.productId)?.storeId) || "unknown";
-      productsBoughtByStore[sid] = (productsBoughtByStore[sid] || 0) + Number(o.quantity ?? 1);
-    });
+  // ✅ Format numbers safely
+  const formatCurrency = (val) =>
+    `₹${Number(val || 0).toLocaleString("en-IN")}`;
 
-    const productsBoughtByStoreArr = Object.entries(productsBoughtByStore).map(([storeId, qty]) => {
-      const store = stores.find((s) => s.id === storeId || s._id === storeId) || { name: storeId };
-      return { storeId, name: store.name || storeId, quantity: qty };
-    });
+//   return (
+//     <div className="p-6 bg-gray-50 min-h-screen">
+//       <h1 className="text-3xl font-bold text-gray-800 mb-6">📊 Store Dashboard</h1>
 
-    // revenue by product
-    const revenueByProduct = {};
-    orders.forEach((o) => {
-      const pid = o.productId || o.product_id || "unknown";
-      revenueByProduct[pid] = (revenueByProduct[pid] || 0) + Number(o.totalPrice ?? o.amount ?? 0);
-    });
+//       {/* Filters */}
+//       <div className="flex flex-wrap items-center gap-4 bg-white p-4 rounded-lg shadow mb-8">
+//         <label className="text-gray-700">Store:</label>
+//         <select
+//           name="storeId"
+//           value={filters.storeId}
+//           onChange={handleFilterChange}
+//           className="border rounded-md p-2"
+//         >
+//           <option value="">All Stores</option>
+//           {stores.map((store) => (
+//             <option key={store._id} value={store._id}>
+//               {store.name}
+//             </option>
+//           ))}
+//         </select>
 
-    const topProducts = Object.entries(revenueByProduct)
-      .map(([pid, revenue]) => ({ product: products.find((p) => p.id === pid || p._id === pid) || { id: pid, name: pid }, revenue }))
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 6);
+//         <label className="text-gray-700">Start Date:</label>
+//         <input
+//           type="date"
+//           name="start"
+//           value={filters.start}
+//           onChange={handleFilterChange}
+//           className="border rounded-md p-2"
+//         />
 
-    // revenue by store
-    const revenueByStore = {};
-    orders.forEach((o) => {
-      const sid = o.storeId || o.store_id || (products.find((p) => p.id === o.productId || p._id === o.productId)?.storeId) || "unknown";
-      revenueByStore[sid] = (revenueByStore[sid] || 0) + Number(o.totalPrice ?? o.amount ?? 0);
-    });
+//         <label className="text-gray-700">End Date:</label>
+//         <input
+//           type="date"
+//           name="end"
+//           value={filters.end}
+//           onChange={handleFilterChange}
+//           className="border rounded-md p-2"
+//         />
 
-    const revenueByStoreArr = Object.entries(revenueByStore).map(([storeId, revenue]) => {
-      const store = stores.find((s) => s.id === storeId || s._id === storeId) || { name: storeId };
-      return { storeId, name: store.name || storeId, revenue };
-    });
+//         <button
+//           onClick={fetchKPIs}
+//           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+//           disabled={loading}
+//         >
+//           {loading ? "Loading..." : "Apply Filters"}
+//         </button>
+//       </div>
 
-    return {
-      totalStores,
-      totalProducts,
-      totalOrders,
-      totalRevenue,
-      productsBoughtByStoreArr,
-      topProducts,
-      revenueByStoreArr,
-    };
-  }, [stores, products, orders]);
+//       {/* KPI Metrics */}
+//       {metrics ? (
+//         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+//           <MetricCard title="Total Revenue" value={formatCurrency(metrics.totalRevenue)} />
+//           <MetricCard title="Total Orders" value={metrics.totalOrders || 0} />
+//           <MetricCard title="Avg Order Value" value={formatCurrency(metrics.avgOrderValue)} />
+//           <MetricCard title="New Customers" value={metrics.newCustomers || 0} />
+//           <MetricCard title="Repeat Customers" value={metrics.repeatCustomers || 0} />
+//         </div>
+//       ) : (
+//         <div className="text-gray-500 mb-8">No KPI data available.</div>
+//       )}
 
-  const timeseries = useMemo(() => {
-    const map = {};
-    orders.forEach((o) => {
-      const raw = o.createdAt ?? o.created_at ?? o.date ?? o.timestamp ?? null;
-      const d = raw ? new Date(raw) : new Date();
-      if (Number.isNaN(d.getTime())) return;
-      const hour = d.getHours();
-      map[hour] = map[hour] || { hour: `${hour}:00`, orders: 0, revenue: 0 };
-      map[hour].orders += 1;
-      map[hour].revenue += Number(o.totalPrice ?? o.amount ?? 0);
-    });
-    return Array.from({ length: 24 }).map((_, i) => map[i] || { hour: `${i}:00`, orders: 0, revenue: 0 });
-  }, [orders]);
+//       {/* Line Chart */}
+//       <div className="bg-white p-6 rounded-lg shadow mb-8">
+//         <h2 className="text-lg font-semibold text-gray-800 mb-4">
+//           Orders & Revenue Over Time
+//         </h2>
+//         {timeseries.length > 0 ? (
+//           <ResponsiveContainer width="100%" height={350}>
+//             <LineChart data={timeseries}>
+//               <CartesianGrid strokeDasharray="3 3" />
+//               <XAxis dataKey="date" />
+//               <YAxis yAxisId="left" orientation="left" />
+//               <YAxis yAxisId="right" orientation="right" />
+//               <Tooltip formatter={(value, name) => (name === "Revenue (₹)" ? formatCurrency(value) : value)} />
+//               <Legend />
+//               <Line
+//                 yAxisId="left"
+//                 type="monotone"
+//                 dataKey="orders"
+//                 stroke="#8884d8"
+//                 name="Orders"
+//                 strokeWidth={2}
+//                 dot={false}
+//               />
+//               <Line
+//                 yAxisId="right"
+//                 type="monotone"
+//                 dataKey="revenue"
+//                 stroke="#82ca9d"
+//                 name="Revenue (₹)"
+//                 strokeWidth={2}
+//                 dot={false}
+//               />
+//             </LineChart>
+//           </ResponsiveContainer>
+//         ) : (
+//           <p className="text-gray-500 text-center py-10">
+//             No data available for selected filters.
+//           </p>
+//         )}
+//       </div>
 
-  // If a consumer passed `myProducts` and expected different metric logic (example in your nav code), compute those too
-  const navMetrics = useMemo(() => {
-    if (!myProducts) return null;
-    return {
-      totalRevenue: myProducts.reduce((sum, item) => sum + (item.published ? (item.sellingPrice || 0) * (item.soldCount || 5) : 0), 0),
-      totalOrders: myProducts.filter((item) => item.published).length * 3,
-      totalProducts: myProducts.filter((item) => item.published).length,
-      storeViews: selectedStore ? 1247 : 0,
-    };
-  }, [myProducts, selectedStore]);
+//       {/* Top Stores */}
+//       <div className="bg-white p-6 rounded-lg shadow">
+//         <h2 className="text-lg font-semibold text-gray-800 mb-4">
+//           🏬 Top 10 Stores by Revenue
+//         </h2>
+//         <div className="overflow-x-auto">
+//           <table className="min-w-full border border-gray-200 text-sm">
+//             <thead className="bg-gray-100 text-gray-700">
+//               <tr>
+//                 <th className="p-2 text-left">Store</th>
+//                 <th className="p-2 text-left">Orders</th>
+//                 <th className="p-2 text-left">Revenue (₹)</th>
+//               </tr>
+//             </thead>
+//             <tbody>
+//               {topStores.length > 0 ? (
+//                 topStores.map((store) => (
+//                   <tr key={store.storeId} className="border-t hover:bg-gray-50">
+//                     <td className="p-2">{store.name || "Unknown Store"}</td>
+//                     <td className="p-2">{store.orders}</td>
+//                     <td className="p-2">{formatCurrency(store.revenue)}</td>
+//                   </tr>
+//                 ))
+//               ) : (
+//                 <tr>
+//                   <td colSpan="3" className="text-center p-4 text-gray-500">
+//                     No stores data available.
+//                   </td>
+//                 </tr>
+//               )}
+//             </tbody>
+//           </table>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
 
-  if (loading) return <div className="p-8">Loading dashboard...</div>;
+// // ✅ Reusable KPI card
+// const MetricCard = ({ title, value }) => (
+//   <div className="bg-white p-4 rounded-lg shadow text-center hover:shadow-md transition-shadow">
+//     <h2 className="text-gray-600 text-sm">{title}</h2>
+//     <p className="text-2xl font-bold text-blue-600 mt-1">{value}</p>
+//   </div>
+// );
 
-  return (
-    <div className="p-6 space-y-6">
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded">
-          <strong>Warning:</strong> {error}
+
+
+
+
+
+return (
+  <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300">
+    <div className="flex-1 p-8 flex flex-col">
+      <div className="max-w-7xl w-full mx-auto flex-1 flex flex-col">
+        <h1 className="text-4xl font-extrabold text-gray-900 mb-8 tracking-tight flex items-center gap-2">
+          📊{" "}
+          <span className="bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">
+            Store Dashboard
+          </span>
+        </h1>
+
+        {/* Filters */}
+        <div className="flex flex-wrap items-center gap-4 bg-white/80 backdrop-blur-sm border border-gray-200 p-6 rounded-2xl shadow-md hover:shadow-lg transition-shadow mb-10">
+          <label className="text-gray-700 font-medium">Store:</label>
+          <select
+            name="storeId"
+            value={filters.storeId}
+            onChange={handleFilterChange}
+            className="border-gray-300 rounded-xl p-2 px-3 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all bg-white"
+          >
+            <option value="">All Stores</option>
+            {stores.map((store) => (
+              <option key={store._id} value={store._id}>
+                {store.name}
+              </option>
+            ))}
+          </select>
+
+          <label className="text-gray-700 font-medium">Start Date:</label>
+          <input
+            type="date"
+            name="start"
+            value={filters.start}
+            onChange={handleFilterChange}
+            className="border-gray-300 rounded-xl p-2 px-3 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all bg-white"
+          />
+
+          <label className="text-gray-700 font-medium">End Date:</label>
+          <input
+            type="date"
+            name="end"
+            value={filters.end}
+            onChange={handleFilterChange}
+            className="border-gray-300 rounded-xl p-2 px-3 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all bg-white"
+          />
+
+          <button
+            onClick={fetchKPIs}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-xl font-medium shadow-md hover:shadow-lg hover:scale-105 transform transition-all duration-200 disabled:opacity-60"
+            disabled={loading}
+          >
+            {loading ? "Loading..." : "Apply Filters"}
+          </button>
         </div>
-      )}
 
-      {/* Top summary cards (styled like your nav) */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
-        <Card icon={<DollarSign className="h-8 w-8 text-green-600" />} title="Total Revenue" value={`$${totals.totalRevenue.toFixed(2)}`} />
-        <Card icon={<ShoppingCart className="h-8 w-8 text-blue-600" />} title="Total Orders" value={totals.totalOrders} />
-        <Card icon={<Package className="h-8 w-8 text-purple-600" />} title="Products" value={totals.totalProducts} />
-        <Card icon={<Eye className="h-8 w-8 text-orange-600" />} title="Store Views" value={selectedStore ? 1247 : 0} />
-      </div>
-
-      {/* If app already passed navMetrics, show a small hint (keeps compatibility) */}
-      {navMetrics && (
-        <div className="text-sm text-gray-500">(Using local nav metrics for quick preview)</div>
-      )}
-
-      {/* Main grid: area chart + donut */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-white rounded shadow p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="font-semibold">User Activity</h3>
-            <div className="text-sm text-gray-500">Orders & Revenue (24h)</div>
+        {/* KPI Metrics */}
+        {metrics ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-10">
+            <MetricCard title="Total Revenue" value={formatCurrency(metrics.totalRevenue)} />
+            <MetricCard title="Total Orders" value={metrics.totalOrders || 0} />
+            <MetricCard title="Avg Order Value" value={formatCurrency(metrics.avgOrderValue)} />
+            <MetricCard title="New Customers" value={metrics.newCustomers || 0} />
+            <MetricCard title="Repeat Customers" value={metrics.repeatCustomers || 0} />
           </div>
-          <div style={{ width: "100%", height: 260 }}>
-            <ResponsiveContainer>
-              <AreaChart data={timeseries} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#34D399" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#34D399" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#60A5FA" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#60A5FA" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="hour" />
-                <YAxis />
-                <CartesianGrid strokeDasharray="3 3" />
-                <Tooltip />
-                <Area type="monotone" dataKey="orders" stroke="#10B981" fillOpacity={1} fill="url(#colorOrders)" />
-                <Area type="monotone" dataKey="revenue" stroke="#3B82F6" fillOpacity={1} fill="url(#colorRevenue)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        ) : (
+          <div className="text-gray-500 text-center italic mb-10">No KPI data available.</div>
+        )}
 
-        <div className="bg-white rounded shadow p-4">
-          <h3 className="font-semibold mb-2">User Distribution / Products Bought</h3>
-          <div style={{ width: "100%", height: 260 }}>
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie
-                  data={totals.productsBoughtByStoreArr}
-                  dataKey="quantity"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  label={(entry) => `${entry.name}: ${entry.quantity}`}
-                >
-                  {totals.productsBoughtByStoreArr.map((_, idx) => (
-                    <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* Revenue bar + system alerts (simple list) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-white rounded shadow p-4">
-          <h3 className="font-semibold mb-2">Revenue & Orders by Store</h3>
-          <div style={{ width: "100%", height: 260 }}>
-            <ResponsiveContainer>
-              <BarChart data={totals.revenueByStoreArr} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
+        {/* Line Chart */}
+        <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl border border-gray-200 shadow-md hover:shadow-lg transition-shadow mb-10 flex-1">
+          <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+            📈 Orders & Revenue Over Time
+          </h2>
+          {timeseries.length > 0 ? (
+            <ResponsiveContainer width="100%" height={350}>
+              <LineChart data={timeseries}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                <XAxis dataKey="date" stroke="#555" />
+                <YAxis yAxisId="left" orientation="left" stroke="#555" />
+                <YAxis yAxisId="right" orientation="right" stroke="#555" />
+                <Tooltip
+                  contentStyle={{ borderRadius: "10px", border: "1px solid #ddd" }}
+                  formatter={(value, name) =>
+                    name === "Revenue ($)" ? formatCurrency(value) : value
+                  }
+                />
                 <Legend />
-                <Bar dataKey="revenue" fill="#3B82F6" />
-              </BarChart>
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="orders"
+                  stroke="#6366f1"
+                  name="Orders"
+                  strokeWidth={2.5}
+                  dot={false}
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#10b981"
+                  name="Revenue (₹)"
+                  strokeWidth={2.5}
+                  dot={false}
+                />
+              </LineChart>
             </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="bg-white rounded shadow p-4">
-          <h3 className="font-semibold mb-2">System Alerts</h3>
-          <div className="space-y-3 text-sm text-gray-700">
-            <div className="p-3 bg-yellow-50 border rounded">High CPU usage detected on Server 2 — 5 min ago</div>
-            <div className="p-3 bg-blue-50 border rounded">Database backup completed successfully — 1 hour ago</div>
-            <div className="p-3 bg-red-50 border rounded">Failed login attempts detected — 2 hours ago</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Top products list */}
-      <div className="bg-white rounded shadow p-4">
-        <h3 className="font-semibold mb-3">Top Products by Revenue</h3>
-        <ul className="space-y-3">
-          {totals.topProducts.length > 0 ? (
-            totals.topProducts.map((p) => (
-              <li key={p.product.id || p.product._id} className="flex items-center space-x-3">
-                <img src={(p.product.image || "https://via.placeholder.com/64")} alt={p.product.name} className="w-12 h-12 rounded object-cover" />
-                <div className="flex-1">
-                  <div className="font-medium">{p.product.name}</div>
-                  <div className="text-sm text-gray-500">Revenue: ${p.revenue.toFixed(2)}</div>
-                </div>
-                <div className="text-sm text-gray-700">Orders: {orders.filter(o => o.productId === p.product.id || o.product_id === p.product.id).length}</div>
-              </li>
-            ))
           ) : (
-            <li className="text-sm text-gray-500">No sales yet</li>
+            <p className="text-gray-500 text-center py-12 italic">
+              No data available for selected filters.
+            </p>
           )}
-        </ul>
-      </div>
+        </div>
 
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-500">Last updated: {new Date().toLocaleString()}</div>
-        <div className="space-x-2">
-          <button onClick={fetchAll} className="px-3 py-1 border rounded">Refresh</button>
+        {/* Top Stores */}
+        <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl border border-gray-200 shadow-md hover:shadow-lg transition-shadow mb-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+            🏬 Top 10 Stores by Revenue
+          </h2>
+          <div className="overflow-x-auto rounded-lg">
+            <table className="min-w-full border border-gray-200 text-sm overflow-hidden rounded-lg">
+              <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 text-gray-700 uppercase tracking-wider">
+                <tr>
+                  <th className="p-3 text-left font-semibold">Store</th>
+                  <th className="p-3 text-left font-semibold">Orders</th>
+                  <th className="p-3 text-left font-semibold">Revenue (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topStores.length > 0 ? (
+                  topStores.map((store) => (
+                    <tr
+                      key={store.storeId}
+                      className="border-t border-gray-100 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-colors"
+                    >
+                      <td className="p-3 font-medium text-gray-800">
+                        {store.name || "Unknown Store"}
+                      </td>
+                      <td className="p-3 text-gray-700">{store.orders}</td>
+                      <td className="p-3 text-gray-800 font-semibold">
+                        {formatCurrency(store.revenue)}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="3" className="text-center p-6 text-gray-500 italic">
+                      No stores data available.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
-  );
+  </div>
+);
+
 }
 
-function Card({ icon, title, value }) {
-  return (
-    <div className="bg-white p-6 rounded-lg shadow">
-      <div className="flex items-center">
-        {icon}
-        <div className="ml-4">
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
+// ✅ Reusable KPI Card
+const MetricCard = ({ title, value }) => (
+  <div className="bg-gradient-to-br from-white to-gray-50 p-6 rounded-2xl border border-gray-100 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 text-center flex flex-col justify-center">
+    <h2 className="text-gray-500 text-sm font-medium">{title}</h2>
+    <p className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mt-2">
+      {value}
+    </p>
+  </div>
+);
 
+
+
+export default Dashboard;
+
+
+
+
+
+
+
+
+// import React, { useEffect, useState } from "react";
+// import axios from "axios";
+// import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+
+// const Dashboard = () => {
+//   const [metrics, setMetrics] = useState(null);
+//   const [timeseries, setTimeseries] = useState([]);
+//   const [topStores, setTopStores] = useState([]);
+//   const [stores, setStores] = useState([]);
+//   const [selectedStore, setSelectedStore] = useState("");
+//   const [loading, setLoading] = useState(true);
+//   const [error, setError] = useState("");
+
+//   // Fetch store list
+//   const fetchStores = async () => {
+//     try {
+//       const token = localStorage.getItem("token");
+//       const response = await axios.get("http://localhost:8000/api/stores", {
+//         headers: { Authorization: `Bearer ${token}` },
+//       });
+//       console.log("Fetched stores:", response.data);
+//       setStores(response.data || []);
+//     } catch (err) {
+//       console.error("Error fetching stores:", err);
+//       setError("Failed to load stores");
+//     }
+//   };
+
+//   // Fetch KPIs
+//   const fetchKPIs = async (storeId = "") => {
+//     try {
+//       const token = localStorage.getItem("token");
+//       const url = storeId
+//         ? `http://localhost:8000/api/dashboard/kpis?storeId=${storeId}`
+//         : "http://localhost:8000/api/dashboard/kpis";
+
+//       const response = await axios.get(url, {
+//         headers: { Authorization: `Bearer ${token}` },
+//       });
+
+//       const { metrics, timeseries, topStores } = response.data;
+//       setMetrics(metrics);
+//       setTimeseries(timeseries);
+//       setTopStores(topStores);
+//     } catch (err) {
+//       console.error("Error fetching KPIs:", err);
+//       setError("Failed to load KPIs");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   useEffect(() => {
+//     fetchStores();
+//     fetchKPIs();
+//   }, []);
+
+//   const handleStoreChange = (e) => {
+//     const value = e.target.value;
+//     setSelectedStore(value);
+//     fetchKPIs(value);
+//   };
+
+//   if (loading) {
+//     return (
+//       <div className="flex justify-center items-center h-screen bg-gray-50">
+//         <p className="text-gray-600 text-lg">Loading dashboard...</p>
+//       </div>
+//     );
+//   }
+
+//   if (error) {
+//     return (
+//       <div className="flex justify-center items-center h-screen bg-red-50">
+//         <p className="text-red-600 text-lg">{error}</p>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="p-6 bg-gray-50 min-h-screen">
+//       {/* Header */}
+//       <div className="flex justify-between items-center mb-6">
+//         <h1 className="text-2xl font-semibold text-gray-800">📊 Business Dashboard</h1>
+//         <select
+//           value={selectedStore}
+//           onChange={handleStoreChange}
+//           className="px-4 py-2 border border-gray-300 rounded-md bg-white shadow-sm focus:outline-none focus:ring focus:ring-indigo-200"
+//         >
+//           <option value="">All Stores</option>
+//           {Array.isArray(stores) &&
+//             stores.map((store) => (
+//               <option key={store._id} value={store._id}>
+//                 {store.name}
+//               </option>
+//             ))}
+//         </select>
+//       </div>
+
+//       {/* Summary Metrics */}
+//       {metrics && (
+//         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+//           <div className="bg-white shadow rounded-xl p-4 text-center">
+//             <p className="text-gray-500">Total Revenue</p>
+//             <h3 className="text-2xl font-bold text-green-600">₹{metrics.totalRevenue.toFixed(2)}</h3>
+//           </div>
+//           <div className="bg-white shadow rounded-xl p-4 text-center">
+//             <p className="text-gray-500">Total Orders</p>
+//             <h3 className="text-2xl font-bold text-blue-600">{metrics.totalOrders}</h3>
+//           </div>
+//           <div className="bg-white shadow rounded-xl p-4 text-center">
+//             <p className="text-gray-500">Avg Order Value</p>
+//             <h3 className="text-2xl font-bold text-purple-600">₹{metrics.avgOrderValue.toFixed(2)}</h3>
+//           </div>
+//           <div className="bg-white shadow rounded-xl p-4 text-center">
+//             <p className="text-gray-500">New Customers</p>
+//             <h3 className="text-2xl font-bold text-indigo-600">{metrics.newCustomers}</h3>
+//           </div>
+//           <div className="bg-white shadow rounded-xl p-4 text-center">
+//             <p className="text-gray-500">Repeat Customers</p>
+//             <h3 className="text-2xl font-bold text-pink-600">{metrics.repeatCustomers}</h3>
+//           </div>
+//         </div>
+//       )}
+
+//       {/* Sales Trend Chart */}
+//       <div className="bg-white shadow rounded-xl p-6 mb-8">
+//         <h2 className="text-lg font-semibold text-gray-700 mb-4">📈 Sales Trend</h2>
+//         <ResponsiveContainer width="100%" height={350}>
+//           <LineChart data={timeseries}>
+//             <CartesianGrid strokeDasharray="3 3" />
+//             <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+//             <YAxis />
+//             <Tooltip />
+//             <Legend />
+//             <Line type="monotone" dataKey="revenue" stroke="#34d399" name="Revenue" />
+//             <Line type="monotone" dataKey="orders" stroke="#60a5fa" name="Orders" />
+//           </LineChart>
+//         </ResponsiveContainer>
+//       </div>
+
+//       {/* Top Stores */}
+//       <div className="bg-white shadow rounded-xl p-6">
+//         <h2 className="text-lg font-semibold text-gray-700 mb-4">🏬 Top Stores by Revenue</h2>
+//         <div className="overflow-x-auto">
+//           <table className="min-w-full text-sm text-gray-700">
+//             <thead>
+//               <tr className="border-b bg-gray-100">
+//                 <th className="text-left py-3 px-4">Store Name</th>
+//                 <th className="text-left py-3 px-4">Orders</th>
+//                 <th className="text-left py-3 px-4">Revenue</th>
+//               </tr>
+//             </thead>
+//             <tbody>
+//               {topStores?.map((store, i) => (
+//                 <tr key={i} className="border-b hover:bg-gray-50">
+//                   <td className="py-2 px-4">{store.name || "Unnamed Store"}</td>
+//                   <td className="py-2 px-4">{store.orders}</td>
+//                   <td className="py-2 px-4 text-green-600 font-semibold">
+//                     ₹{store.revenue.toFixed(2)}
+//                   </td>
+//                 </tr>
+//               ))}
+//             </tbody>
+//           </table>
+//           {topStores?.length === 0 && (
+//             <p className="text-center text-gray-500 mt-4">No store data available</p>
+//           )}
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default Dashboard;

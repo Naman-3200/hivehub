@@ -40,11 +40,11 @@ export default function Login() {
   // Add Google OAuth handler
   // const handleGoogleLogin = () => {
   //   window.location.href = `${
-  //     import.meta.env.VITE_API_URL || "https://hivehub-1.onrender.com"
+  //     import.meta.env.VITE_API_URL || "http://localhost:8000"
   //   }/api/auth/google`;
   // };
 
-  const BASE_URL = import.meta.env.VITE_API_URL || "https://hivehub-1.onrender.com";
+  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const handleGoogleLogin = () => {
   window.location.href = `${BASE_URL}/api/auth/google`;

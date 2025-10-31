@@ -18,6 +18,14 @@ import StoreHome from "./pages/Landing/StoreHome";
 import StoreLogin from "./pages/Landing/StoreLogin";
 import StoreRegister from "./pages/Landing/StoreRegister";
 import Dashboard from "./pages/Landing/Dashboard";
+import PaymentSuccess from "./pages/Landing/PaymentSuccess";
+import CheckoutButton from "./pages/Landing/CheckoutButton";
+import SuperAdminUsers from "./pages/SuperAdmin/SuperAdminUsers";
+import StoreUsersPage from "./pages/StoreUsersPage";
+import ProtectedRoutes from "./pages/Landing/ProtectedRoute";
+import Community from "./pages/Landing/Community";
+import InventoryPage from "./pages/Inventory/InventoryPage";
+
 
 // import { monitorLocalStorage } from "./pages/monitorlocalStorage";
 function App() {
@@ -29,10 +37,44 @@ function App() {
       <Route path="/store/:slug" element={<StorePage />} />
       <Route path="/builder/:storeId" element={<WebEditor />} />
       <Route path="/dashboardpage" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/checkout" element={<ProtectedRoute><CheckoutButton /></ProtectedRoute>} />
+      <Route path="/community"   element= {<ProtectedRoute><Community/> </ProtectedRoute>} />
+        <Route path="/inventory" element={<ProtectedRoute><InventoryPage /></ProtectedRoute>} />   {/* ✅ new route */}
+
+
+
 
       <Route path="/store/:storeId" element={<StoreHome />} />
         <Route path="/store-login/:storeId" element={<StoreLogin />} />
         <Route path="/store-register/:storeId" element={<StoreRegister />} />
+        <Route path="/payment-success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
+
+        <Route
+  path="/superadmin-dashboard"
+  element={
+    <ProtectedRoutes allowedRoles={["superadmin"]}>
+      <SuperAdminDashboard />
+    </ProtectedRoutes>
+  }
+/>
+
+<Route
+  path="/superadmin-users"
+  element={
+    <ProtectedRoutes allowedRoles={["superadmin"]}>
+      <SuperAdminUsers />
+    </ProtectedRoutes>
+  }
+/>
+
+<Route
+  path="/store-users"
+  element={
+    <ProtectedRoutes allowedRoles={["admin", "superadmin"]}>
+      <StoreUsersPage />
+    </ProtectedRoutes>
+  }
+/>
 
             
 

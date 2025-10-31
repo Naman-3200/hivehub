@@ -2,6 +2,8 @@ import Store from "../model/store.model.js";
 import WebProduct from "../model/webproduct.model.js";
 import fetch from "node-fetch";
 import axios from "axios";
+import StoreProduct from "../model/product.model.js";
+
 
 
 
@@ -13,6 +15,35 @@ const token = "YXwvRmVm8yKQI5BZlgSJuQ6m";
 
 
 
+export const toggleStoreStatus = async (req, res) => {
+  try {
+    const { storeId } = req.params;
+    const { disable } = req.body;
+
+    const store = await Store.findById(storeId);
+    if (!store) {
+      return res.status(404).json({ message: "Store not found" });
+    }
+
+    // Prevent disabling Superadmin-owned stores
+    if (store.ownerId?.role === "superadmin") {
+      return res.status(403).json({ message: "Cannot disable superadmin's store" });
+    }
+
+    store.isDisabled = disable;
+    await store.save();
+
+    res.status(200).json({
+      message: `Store ${disable ? "disabled" : "enabled"} successfully.`,
+      store,
+    });
+  } catch (error) {
+    console.error("Error toggling store:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
 // GET store by ID (with published products)
 export const getStoreById = async (req, res) => {
   try {
@@ -20,6 +51,12 @@ export const getStoreById = async (req, res) => {
 
     // 1️⃣ Find store
     const store = await Store.findById(id);
+if (!store || store.disabled) {
+  return res.status(403).json({ message: "This store is currently disabled." });
+}
+
+
+
     if (!store) {
       return res.status(404).json({ error: "Store not found" });
     }
@@ -228,6 +265,20 @@ function generateWebsiteContent(store, publishedProducts) {
 }
 
 
+export const storeProduct = async (req, res) => {
+  try {
+    const { storeId } = req.params;
+    const products = await StoreProduct.find({ storeId, published: true });
+
+    res.json(products);
+  } catch (error) {
+    console.error("❌ Error fetching store products:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+
 // export const getStoreWebsiteHTML = async (req, res) => {
 //   try {
 //     const { storeId } = req.params;
@@ -339,78 +390,7 @@ async function addDomainToVercel(domain) {
 }
 
 export const editStore = async (req, res) => {
-  // try {
-  //   const { storeId } = req.params;
-  //   const { customDomain } = req.body;
-  //   const userId = req.user.id;
-
-  //   if (!customDomain) {
-  //     return res.status(400).json({ error: "Custom domain required" });
-  //   }
-
-  //   const store = await Store.findOneAndUpdate(
-  //     { _id: storeId, ownerId: userId },
-  //     { $set: { customDomain } },
-  //     { new: true }
-  //   );
-
-  //   if (!store) {
-  //     return res.status(404).json({ error: "Store not found or unauthorized" });
-  //   }
-
-  //   res.json({ success: true, store });
-  // } catch (err) {
-  //   console.error("Update domain error:", err);
-  //   res.status(500).json({ error: "Failed to update domain" });
-  // }
-
-
-//   try {
-//     const { storeId } = req.params;
-//     const { customDomain } = req.body;
-//     const userId = req.user.id;
-
-//     console.log("🔍 Checking update filter:", { storeId, userId: req.user?.id });
-
-
-//     console.log("🟡 Incoming domain update:", { storeId, customDomain });
-
-//     if (!customDomain) {
-//       return res.status(400).json({ error: "customDomain is required" });
-//     }
-
-//     // 1. Add the domain to Vercel project
-//     const vercelResp = await addDomainToVercel(customDomain);
-//     if (!vercelResp || vercelResp.error) {
-//   console.error("🔴 Vercel API error:", vercelResp);
-//   return res.status(500).json({
-//     error: "Vercel domain addition failed",
-//     detail: vercelResp,
-//   });
-// }
-
-//     // The Vercel API returns verification challenge info in `vercelResp.verification`
-//     // e.g. a TXT record or CNAME you must set. Save that to DB for UI to show.
-//     const verification = vercelResp.verification || vercelResp.verify; // depends on API version
-
-//     // 2. Save to your Store DB
-//     const updated = await Store.findOneAndUpdate(
-//       { _id: storeId },
-//       {
-//         customDomain,
-//         domainVerified: false,
-//         verificationChallenge: verification,
-//       },
-//       { new: true }
-//     );
-
-//     console.log("✅ Store domain updated:", updated);
-
-//     return res.json({ success: true, store: updated });
-//   } catch (err) {
-//     console.error("Custom domain error:", err);
-//     res.status(500).json({ error: "Server error" });
-//   }
+ 
 
 
 try {

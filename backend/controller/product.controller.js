@@ -7,6 +7,8 @@ import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 import express from "express";
 import OpenAI from "openai";
+import InventoryItem from "../model/inventory.model.js";
+
 
 const router = express.Router();
 const client = new OpenAI({ apiKey: "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" });
@@ -204,37 +206,187 @@ export const getProducts = async (req, res) => {
 
 
 
+// export const addToMyProducts = async (req, res) => {
+//   try {
+//     const userId = req.user.id; // from auth middleware
+//     const { productId, name, price, category, storeId, sellingPrice, quantity } = req.body;
+//     let imageUrl;
 
+//     // If image file is provided, upload to cloudinary
+//     if (req.file) {
+//       const uploadRes = await cloudinary.uploader.upload(req.file.path, {
+//         folder: "my-products",
+//       });
+//       imageUrl = uploadRes.secure_url;
+//       fs.unlinkSync(req.file.path); // delete local temp file
+//     }
+
+//     if (!productId || !storeId) {
+//       return res.status(400).json({ error: "productId and storeId are required" });
+//     }
+
+//     const updatedUser = await User.findByIdAndUpdate(
+//       userId,
+//       { $push: { myProducts: { productId, name, price, mage: imageUrl, category, storeId, published: true, sellingPrice, quantity } } },
+//       { new: true, select: "myProducts" }
+//     );
+
+
+//     // 2. Add/Update in StoreProduct collection
+//     await StoreProduct.findOneAndUpdate(
+//       { productId, storeId, userId },
+//       {
+//         $set: {
+//           userId,
+//           productId,
+//           storeId,
+//           name,
+//           price,
+//           image: imageUrl,
+//           category,
+//           sellingPrice,   // ✅ new
+//           quantity,       // ✅ new
+//           published: true,
+//         },
+//       },
+//       { upsert: true, new: true }
+//     );
+
+//     // 3. Add/Update in WebProduct collection
+//     await WebProduct.findOneAndUpdate(
+//       { productId, storeId },
+//       {
+//         $set: {
+//           userId,
+//           productId,
+//           storeId,
+//           name,
+//           price,
+//           image: imageUrl,
+//           category,
+//           sellingPrice,   
+//           quantity,  
+//           published: true
+//         }
+//       },
+//       { upsert: true, new: true }
+//     );
+
+//     res.json({ success: true, myProducts: updatedUser.myProducts });
+//   } catch (err) {
+//     console.error("Add to My Products error:", err);
+//     res.status(500).json({ error: "Failed to add product" });
+//   }
+// };
+
+// controllers/productController.js
+// export const publishToWebsite = async (req, res) => {
+//   try {
+//     const productIdParam = req.params.productId;
+
+//     const userFromToken = req.user.id;
+//     const { published, storeId } = req.body;
+
+//     console.log("publishToWebsite called with:", {
+//       productIdParam,
+//       userFromToken,
+//       published,
+//       storeId
+//     });
+
+//     const user = await User.findOneAndUpdate(
+//       { _id: userFromToken, "myProducts.productId": productIdParam },
+//       {
+//         $set: {
+//           "myProducts.$.published": published,
+//           "myProducts.$.storeId": storeId
+//         }
+//       },
+//       { new: true }
+//     );
+
+//     if (!user) {
+//       return res.status(404).json({ message: "User or product not found" });
+//     }
+
+//     const updatedProduct = user.myProducts.find(
+//       (p) => p.productId.toString() === productIdParam.toString()
+//     );
+
+//      // 2. Add/Update in WebProduct table
+//     // 2. Add/Update in WebProduct table
+// if (published) {
+//   const webProduct = await WebProduct.findOneAndUpdate(
+//     { productId: productIdParam, storeId: storeId || null }, // match
+//     {
+//       userId: userFromToken,
+//       productId: productIdParam,
+//       storeId: storeId || null,
+//       name: updatedProduct?.name || "",
+//       price: updatedProduct?.price || 0,
+//       image: updatedProduct?.image || "",
+//       category: updatedProduct?.category || "",
+//       published: true,
+//     },
+//     { upsert: true, new: true, setDefaultsOnInsert: true }
+//   );
+
+//   console.log("WebProduct entry created/updated:", webProduct);
+// } else {
+//   // If unpublishing → remove
+//   await WebProduct.deleteOne({ productId: productIdParam, storeId: storeId || null });
+// }
+
+
+//     res.json({ success: true, product: updatedProduct });
+//   } catch (err) {
+//     console.error("Publish product error:", err);
+//     res.status(500).json({ error: "Failed to publish product" });
+//   }
+// };
 
 
 
 export const addToMyProducts = async (req, res) => {
   try {
-    const userId = req.user.id; // from auth middleware
+    const userId = req.user.id;
     const { productId, name, price, category, storeId, sellingPrice, quantity } = req.body;
     let imageUrl;
 
-    // If image file is provided, upload to cloudinary
     if (req.file) {
       const uploadRes = await cloudinary.uploader.upload(req.file.path, {
         folder: "my-products",
       });
       imageUrl = uploadRes.secure_url;
-      fs.unlinkSync(req.file.path); // delete local temp file
+      fs.unlinkSync(req.file.path);
     }
 
     if (!productId || !storeId) {
       return res.status(400).json({ error: "productId and storeId are required" });
     }
 
+    // ⚠️ FIX: 'mage' -> 'image'
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { $push: { myProducts: { productId, name, price, mage: imageUrl, category, storeId, published: true, sellingPrice, quantity } } },
+      {
+        $push: {
+          myProducts: {
+            productId,
+            name,
+            price,
+            image: imageUrl, // ✅ fixed
+            category,
+            storeId,
+            published: true,
+            sellingPrice,
+            quantity,
+          },
+        },
+      },
       { new: true, select: "myProducts" }
     );
 
-
-    // 2. Add/Update in StoreProduct collection
+    // Sync StoreProduct
     await StoreProduct.findOneAndUpdate(
       { productId, storeId, userId },
       {
@@ -246,15 +398,15 @@ export const addToMyProducts = async (req, res) => {
           price,
           image: imageUrl,
           category,
-          sellingPrice,   // ✅ new
-          quantity,       // ✅ new
+          sellingPrice,
+          quantity,
           published: true,
         },
       },
       { upsert: true, new: true }
     );
 
-    // 3. Add/Update in WebProduct collection
+    // Sync WebProduct
     await WebProduct.findOneAndUpdate(
       { productId, storeId },
       {
@@ -266,10 +418,10 @@ export const addToMyProducts = async (req, res) => {
           price,
           image: imageUrl,
           category,
-          sellingPrice,   
-          quantity,  
-          published: true
-        }
+          sellingPrice,
+          quantity,
+          published: true,
+        },
       },
       { upsert: true, new: true }
     );
@@ -281,68 +433,168 @@ export const addToMyProducts = async (req, res) => {
   }
 };
 
-// controllers/productController.js
+
+
+// export const publishToWebsite = async (req, res) => {
+//   try {
+//     const { productId } = req.params;
+//     const userId = req.user._id || req.user.id;
+//     const { published, storeId } = req.body;
+
+//     console.log("🚀 publishToWebsite called with:", {
+//       productId,
+//       userId,
+//       published,
+//       storeId,
+//     });
+
+//     if (!storeId)
+//       return res.status(400).json({ message: "storeId is required" });
+
+//     // 1️⃣ Find user and product inside myProducts array
+//     const user = await User.findOneAndUpdate(
+//       { _id: userId, "myProducts.productId": productId },
+//       {
+//         $set: {
+//           "myProducts.$.published": published,
+//           "myProducts.$.storeId": storeId,
+//         },
+//       },
+//       { new: true }
+//     );
+
+//     if (!user) {
+//       return res.status(404).json({ message: "User or product not found" });
+//     }
+
+//     const updatedProduct = user.myProducts.find(
+//       (p) => String(p.productId) === String(productId)
+//     );
+
+//     if (!updatedProduct) {
+//       return res.status(404).json({ message: "Product not found for this user" });
+//     }
+
+//     // 2️⃣ If publishing → upsert into StoreProduct collection
+//     if (published) {
+//       const webProduct = await WebProduct.findOneAndUpdate(
+//         { productId, storeId },
+//         {
+//           userId,
+//           productId,
+//           storeId,
+//           name: updatedProduct.name || "Untitled Product",
+//           price: updatedProduct.price || 0,
+//           image: updatedProduct.image || "",
+//           category: updatedProduct.category || "Miscellaneous",
+//           quantity: updatedProduct.quantity || 0,
+//           published: true,
+//         },
+//         { upsert: true, new: true, setDefaultsOnInsert: true }
+//       );
+
+//       console.log("✅ WebProduct synced:", webProduct._id);
+//     } else {
+//       // 3️⃣ Unpublishing → remove from store site
+//       await WebProduct.deleteOne({ productId, storeId });
+//       console.log(`🚫 Product ${productId} unpublished from store ${storeId}`);
+//     }
+
+//     // 4️⃣ (Optional) Sync to central inventory if exists
+//     await InventoryItem.findByIdAndUpdate(productId, { published });
+
+//     res.json({
+//       success: true,
+//       message: published ? "Product published successfully" : "Product unpublished successfully",
+//     });
+//   } catch (err) {
+//     console.error("❌ Publish product error:", err);
+//     res.status(500).json({ error: "Failed to publish product" });
+//   }
+// };
+
+
+
 export const publishToWebsite = async (req, res) => {
   try {
-    const productIdParam = req.params.productId;
-
-    const userFromToken = req.user.id;
+    const { productId } = req.params;
+    const userId = String(req.user._id || req.user.id);
     const { published, storeId } = req.body;
 
-    console.log("publishToWebsite called with:", {
-      productIdParam,
-      userFromToken,
-      published,
-      storeId
-    });
+    if (!storeId) {
+      return res.status(400).json({ message: "storeId is required" });
+    }
 
+    // 1) Update myProducts
     const user = await User.findOneAndUpdate(
-      { _id: userFromToken, "myProducts.productId": productIdParam },
+      { _id: userId, "myProducts.productId": productId },
       {
         $set: {
-          "myProducts.$.published": published,
-          "myProducts.$.storeId": storeId
-        }
+          "myProducts.$.published": !!published,
+          "myProducts.$.storeId": String(storeId),
+        },
       },
       { new: true }
     );
+    if (!user) return res.status(404).json({ message: "User or product not found" });
 
-    if (!user) {
-      return res.status(404).json({ message: "User or product not found" });
+    const updatedProduct = user.myProducts.find((p) => String(p.productId) === String(productId));
+    if (!updatedProduct) return res.status(404).json({ message: "Product not found for this user" });
+
+    // 2) Sync StoreProduct
+    if (published) {
+      await StoreProduct.findOneAndUpdate(
+        { userId, productId, storeId: String(storeId) },
+        {
+          $set: {
+            userId,
+            productId,
+            storeId: String(storeId),
+            name: updatedProduct.name || "Untitled Product",
+            price: updatedProduct.price || 0,
+            image: updatedProduct.image || "",
+            category: updatedProduct.category || "Miscellaneous",
+            quantity: updatedProduct.quantity || 0,
+            sellingPrice: updatedProduct.sellingPrice || updatedProduct.price || 0,
+            published: true,
+          },
+        },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+    } else {
+      await StoreProduct.deleteOne({ userId, productId, storeId: String(storeId) });
     }
 
-    const updatedProduct = user.myProducts.find(
-      (p) => p.productId.toString() === productIdParam.toString()
-    );
+    // 3) Sync WebProduct as the storefront source of truth
+    if (published) {
+      await WebProduct.findOneAndUpdate(
+        { productId, storeId: String(storeId) },
+        {
+          $set: {
+            userId,
+            productId,
+            storeId: String(storeId),
+            name: updatedProduct.name || "Untitled Product",
+            price: updatedProduct.price || 0,
+            image: updatedProduct.image || "",
+            category: updatedProduct.category || "Miscellaneous",
+            quantity: updatedProduct.quantity || 0,
+            sellingPrice: updatedProduct.sellingPrice || updatedProduct.price || 0,
+            published: true,
+          },
+        },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+    } else {
+      await WebProduct.deleteOne({ productId, storeId: String(storeId) });
+    }
 
-     // 2. Add/Update in WebProduct table
-    // 2. Add/Update in WebProduct table
-if (published) {
-  const webProduct = await WebProduct.findOneAndUpdate(
-    { productId: productIdParam, storeId: storeId || null }, // match
-    {
-      userId: userFromToken,
-      productId: productIdParam,
-      storeId: storeId || null,
-      name: updatedProduct?.name || "",
-      price: updatedProduct?.price || 0,
-      image: updatedProduct?.image || "",
-      category: updatedProduct?.category || "",
-      published: true,
-    },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
-  );
-
-  console.log("WebProduct entry created/updated:", webProduct);
-} else {
-  // If unpublishing → remove
-  await WebProduct.deleteOne({ productId: productIdParam, storeId: storeId || null });
-}
-
-
-    res.json({ success: true, product: updatedProduct });
+    res.json({
+      success: true,
+      message: published ? "Product published successfully" : "Product unpublished successfully",
+    });
   } catch (err) {
-    console.error("Publish product error:", err);
+    console.error("❌ Publish product error:", err);
     res.status(500).json({ error: "Failed to publish product" });
   }
 };
@@ -352,7 +604,7 @@ export const getPublishedProducts = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const user = await User.findById(userId).select("myProducts");
+    const user = await User.findById(id).select("myProducts");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -365,6 +617,24 @@ export const getPublishedProducts = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+
+export const getStorePublishedProducts = async (req, res) => {
+  try {
+    const { storeId } = req.params;
+    if (!storeId) return res.status(400).json({ message: "storeId is required" });
+
+    // WebProduct is our storefront source of truth
+    const products = await WebProduct.find({ storeId: String(storeId), published: true }).lean();
+    res.json({ products });
+  } catch (e) {
+    console.error("getStorePublishedProducts error:", e);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+
 
 // export const getMyProducts = async (req, res) => {
 //   try {
@@ -462,4 +732,25 @@ export const searchProducts = async (req, res) => {
       err.response?.data?.message || "Server error searching CJ products";
     res.status(status).json({ error: message });
   }
+};
+
+
+
+
+export const syncToStoreProduct = async (product, storeId, userId) => {
+  await WebProduct.findOneAndUpdate(
+    { productId: product.productId, storeId },
+    {
+      userId,
+      storeId,
+      productId: product.productId,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      category: product.category,
+      quantity: product.quantity,
+      published: product.published,
+    },
+    { upsert: true }
+  );
 };

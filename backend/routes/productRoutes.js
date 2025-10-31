@@ -1,5 +1,5 @@
 import express from "express";
-import { getProducts,addToMyProducts,getMyProducts,removeFromMyProducts,searchProducts, publishToWebsite, getPublishedProducts, bulkAddToMyProducts, updateMyProduct, updateTheProductStore } from "../controller/product.controller.js";
+import { getProducts,addToMyProducts,getMyProducts,removeFromMyProducts,searchProducts, publishToWebsite, getPublishedProducts, bulkAddToMyProducts, updateMyProduct, updateTheProductStore, getStorePublishedProducts } from "../controller/product.controller.js";
 import {authenticateToken} from "../middleware/auth.middleware.js"
 import multer from "multer";
 import Product from "../model/product.model.js";
@@ -20,6 +20,8 @@ router.get("/products/search", searchProducts);
 router.put("/publish-to-website/:productId", authenticateToken, publishToWebsite);
 router.put("/my-products/update", authenticateToken, upload.single("image"), updateMyProduct);
 router.put("/my-products/:productId", authenticateToken, updateTheProductStore);
+router.get("/stores/:storeId/published-products", authenticateToken, getStorePublishedProducts);
+
 
 
 
