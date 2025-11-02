@@ -16,7 +16,7 @@
 //     }
 
 //     // Redirect URL after successful payment
-//     const redirectUrl = "https://hivehub-tr8u.vercel.app/payment-success";
+//     const redirectUrl = "https://hivehub-tr8u.vercel.app//payment-success";
 
 //     // Generate hosted checkout link (no API key required)
 //     const checkoutUrl = `https://whop.com/checkout/${planId}?redirect_url=${encodeURIComponent(
@@ -41,7 +41,7 @@
 // backend/controllers/payment.controller.js
 import axios from "axios";
 
-const WHOP_API_KEY = "kts3MMnb3M-1K1wX319Yd2NLxJ2EIiSZx6OFQqGS1wM";
+const WHOP_API_KEY = "iXhX284W5UMZgUi17DlSy_i_feZgAiMlFPcxjP1rKis";
 
 export const createWhopCheckout = async (req, res) => {
   try {

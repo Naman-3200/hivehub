@@ -3,6 +3,7 @@ import User from "../model/user.model.js";
 import WebProduct from "../model/webproduct.model.js";
 import mongoose from "mongoose";
 import StoreProduct from "../model/product.model.js";
+import Store from "../model/store.model.js";
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 import express from "express";
@@ -518,83 +519,78 @@ export const addToMyProducts = async (req, res) => {
 export const publishToWebsite = async (req, res) => {
   try {
     const { productId } = req.params;
-    const userId = String(req.user._id || req.user.id);
+    const userId = req.user._id || req.user.id;
     const { published, storeId } = req.body;
 
-    if (!storeId) {
-      return res.status(400).json({ message: "storeId is required" });
-    }
+    if (!storeId) return res.status(400).json({ message: "storeId is required" });
 
-    // 1) Update myProducts
+    // 1) Update embedded product in user's myProducts
     const user = await User.findOneAndUpdate(
       { _id: userId, "myProducts.productId": productId },
       {
         $set: {
-          "myProducts.$.published": !!published,
-          "myProducts.$.storeId": String(storeId),
+          "myProducts.$.published": published,
+          "myProducts.$.storeId": storeId,
         },
       },
-      { new: true }
+      { new: true, projection: { myProducts: 1 } }
     );
+
     if (!user) return res.status(404).json({ message: "User or product not found" });
 
-    const updatedProduct = user.myProducts.find((p) => String(p.productId) === String(productId));
+    const updatedProduct = user.myProducts.find(p => String(p.productId) === String(productId));
     if (!updatedProduct) return res.status(404).json({ message: "Product not found for this user" });
 
-    // 2) Sync StoreProduct
-    if (published) {
-      await StoreProduct.findOneAndUpdate(
-        { userId, productId, storeId: String(storeId) },
-        {
-          $set: {
-            userId,
-            productId,
-            storeId: String(storeId),
-            name: updatedProduct.name || "Untitled Product",
-            price: updatedProduct.price || 0,
-            image: updatedProduct.image || "",
-            category: updatedProduct.category || "Miscellaneous",
-            quantity: updatedProduct.quantity || 0,
-            sellingPrice: updatedProduct.sellingPrice || updatedProduct.price || 0,
-            published: true,
-          },
-        },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
-      );
-    } else {
-      await StoreProduct.deleteOne({ userId, productId, storeId: String(storeId) });
-    }
-
-    // 3) Sync WebProduct as the storefront source of truth
+    // 2) Canonical: upsert in WebProduct (or remove on unpublish)
     if (published) {
       await WebProduct.findOneAndUpdate(
-        { productId, storeId: String(storeId) },
+        { productId, storeId },
         {
           $set: {
             userId,
             productId,
-            storeId: String(storeId),
+            storeId,
             name: updatedProduct.name || "Untitled Product",
             price: updatedProduct.price || 0,
+            sellingPrice: updatedProduct.sellingPrice || updatedProduct.price || 0,
             image: updatedProduct.image || "",
             category: updatedProduct.category || "Miscellaneous",
             quantity: updatedProduct.quantity || 0,
-            sellingPrice: updatedProduct.sellingPrice || updatedProduct.price || 0,
             published: true,
           },
         },
         { upsert: true, new: true, setDefaultsOnInsert: true }
       );
+
+      // 3) Optional: keep Store.publishedProducts in sync (used by your /store/:slug page)
+      await Store.findByIdAndUpdate(
+        storeId,
+        {
+          $addToSet: {
+            publishedProducts: {
+              productId,
+              name: updatedProduct.name || "Untitled Product",
+              description: updatedProduct.description || "",
+              image: updatedProduct.image || "",
+              price: updatedProduct.price || 0,
+              sellingPrice: updatedProduct.sellingPrice || updatedProduct.price || 0,
+              category: updatedProduct.category || "",
+              quantity: updatedProduct.quantity || 0,
+            },
+          },
+        }
+      );
     } else {
-      await WebProduct.deleteOne({ productId, storeId: String(storeId) });
+      await WebProduct.deleteOne({ productId, storeId });
+      await Store.findByIdAndUpdate(storeId, { $pull: { publishedProducts: { productId } } });
     }
 
-    res.json({
+    return res.json({
       success: true,
       message: published ? "Product published successfully" : "Product unpublished successfully",
     });
   } catch (err) {
-    console.error("❌ Publish product error:", err);
+    console.error("publishToWebsite error:", err);
     res.status(500).json({ error: "Failed to publish product" });
   }
 };
@@ -680,7 +676,8 @@ export const getMyProducts = async (req, res) => {
   }
 };
 
-// DELETE /api/my-products/:productId
+
+
 export const removeFromMyProducts = async (req, res) => {
   try {
     const userId = req.user.id;

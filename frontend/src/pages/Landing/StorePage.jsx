@@ -922,7 +922,7 @@ const StorePage = () => {
   //       items: cart.map((p) => ({ productId: p.productId, name: p.name, price: p.sellingPrice || p.price })),
   //       totalPrice: total,
   //       storeId: storeData.store?._id || storeData.store?.id,
-  //       redirectUrl: `https://hivehub-tr8u.vercel.app/payment-success`, // where user returns after payment
+  //       redirectUrl: `https://hivehub-tr8u.vercel.app//payment-success`, // where user returns after payment
   //     };
 
   //     const res = await axios.post(
@@ -936,7 +936,7 @@ const StorePage = () => {
   //     // const { purchaseUrl } = res.data;
   //     // redirect user to payment
   //     // window.location.href = purchaseUrl;
-  //         const redirectUrl = encodeURIComponent("https://hivehub-tr8u.vercel.app/payment-success");
+  //         const redirectUrl = encodeURIComponent("https://hivehub-tr8u.vercel.app//payment-success");
 
   //     window.location.href = `https://whop.com/checkout/${planId}?redirect_url=${redirectUrl}`;
   //   } catch (err) {
@@ -1055,7 +1055,7 @@ const StorePage = () => {
           {/* <button onClick={handleCheckout} className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
             Checkout & Pay ₹{cart.reduce((sum, p) => sum + (p.sellingPrice || p.price || 0), 0).toFixed(2)}
           </button> */}
-          <CheckoutButton planId="plan_UdnQYRP0wu87q" />
+          <CheckoutButton planId="plan_2nmlTo9tmKpBF" />
         </div>
       )}
 

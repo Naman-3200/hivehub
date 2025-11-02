@@ -121,6 +121,8 @@ import paymentRoutes from "./routes/payment.route.js";
 import storeUsersRoutes from "./routes/storeusers.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import inventoryRoutes from "./routes/inventory.routes.js";
+import webProductRoutes from "./routes/webProduct.routes.js";
+
 
 
 
@@ -162,6 +164,7 @@ app.use("/api", paymentRoutes); // Payment related routes
 app.use("/api/store-users/manage", storeUsersRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/inventory", inventoryRoutes);
+app.use("/api/web-products", webProductRoutes);
 
 
 

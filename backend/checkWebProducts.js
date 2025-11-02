@@ -1,6 +1,6 @@
 // checkWebProducts.js
 import mongoose from "mongoose";
-import WebProduct from "./model/WebProduct.model.js"; 
+import WebProduct from "./model/webproduct.model.js"; 
 
 // Replace with your MongoDB URI
 const MONGO_URI = "mongodb+srv://souravbhowal:hivehub2025@hive-hub-cluster.injrohh.mongodb.net/hive-hub";

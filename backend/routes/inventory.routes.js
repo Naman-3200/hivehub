@@ -9,14 +9,19 @@ import {
   assignStores,
   listInventory,
 } from "../controller/inventory.controller.js";
+import multer from "multer";
+
 
 const router = express.Router();
+
+const upload = multer({ storage: multer.memoryStorage() });
+
 
 router.post(
   "/",
   authenticateToken,
   authorizeRole("admin", "superadmin","user"),
-  uploadMedia,
+  upload.array("media", 20),
   createInventory
 );
 
