@@ -173,6 +173,49 @@ const fetchStores = async () => {
     }
   };
 
+
+  // Make sure this import exists at the top of DropshipDashboard.jsx
+// import { generateWebsiteContent } from "../generateWebsiteContent.jsx";
+
+const refreshStorePreview = async (storeId) => {
+  if (!storeId) return null;
+  try {
+    console.log("🔄 refreshStorePreview for store:", storeId);
+
+    const resp = await fetch(`https://hivehub-1.onrender.com/api/web-products/${storeId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await resp.json();
+    console.log("📦 /api/web-products response:", data);
+
+    if (!data?.success) {
+      console.warn("⚠️ web-products returned non-success for", storeId, data);
+      return null;
+    }
+
+    const { store, products } = data;
+    console.log(
+      `✅ Building HTML for "${store?.name}" with ${products?.length ?? 0} products`
+    );
+
+    const html = generateWebsiteContent(store, products || []);
+    const blobUrl = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+
+    // persist the blob url on the store in state, so View Live Store reuses it
+    setStores((prev) =>
+      prev.map((s) =>
+        String(s._id || s.id) === String(storeId) ? { ...s, localUrl: blobUrl } : s
+      )
+    );
+
+    return blobUrl;
+  } catch (err) {
+    console.error("❌ refreshStorePreview failed:", err);
+    return null;
+  }
+};
+
+
   // Fetch user's selected products
   const fetchMyProducts = async () => {
     if (!token) return;
@@ -182,6 +225,7 @@ const fetchStores = async () => {
       });
       if (!res.ok) throw new Error("Failed to fetch My Products");
       const data = await res.json();
+      console.log("dsata data data",data)
       setMyProducts(data.myProducts || []);
     } catch (err) {
       console.error("Error fetching My Products:", err);
@@ -243,7 +287,7 @@ const getProductsByCategory = (category) => {
     const storeId = `${newStore.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
 
 
-    return `https://hivehub-tr8u.vercel.app/store/${storeId}`;
+    return `https://hivehub-tr8u.vercel.app//store/${storeId}`;
   };
 
   const createStore = async () => {
@@ -352,124 +396,75 @@ const updateInventoryItem = async (productId, formData) => {
 
 
 
-
-// const publishProduct = async (product) => {
-//  console.log("Full product object:", product); // Add this line
-//  const productIds = product.productId || product.id;
-//     console.log("Product ID being sent:", product.productId); // Add this line
-    
-//     console.log("Publishing product:", productIds);
-    
-//     if (!productIds) {
-//         console.error("No productId found!");
-//         return;
-//     }
-
-//   try {
-//     if (token) {
-//       const response = await fetch(`https://hivehub-1.onrender.com/api/publish-to-website/${productIds}`, {
-//         method: 'PUT',
-//         headers: {
-//           'Authorization': `Bearer ${token}`,
-//           'Content-Type': 'application/json'
-//         },
-//         body: JSON.stringify({ published: true, storeId: (selectedStore?._id || selectedStore.id) })
-//       });
-//       console.log("Publish response status:", response.status);
-
-//       if (!response.ok) {
-//         const error = await response.json();
-//         console.error("Failed to publish:", error);
-//         return;
-//       }
-
-//       fetchMyProducts();
-//       if (selectedStore) {
-//         setTimeout(() => createLocalWebsite(selectedStore), 100);
-//       }
-//     }
-//   } catch (error) {
-//     console.error('Error publishing product:', error);
-//   }
-// };
-
-
-
-const publishProduct = async (product) => {
+async function regenerateLocalSiteFromServer(storeId) {
   try {
-    const productIds = product.productId || product.id;
-    if (!productIds) {
-      console.error("❌ No productId found in product:", product);
-      return;
-    }
-
-    if (!selectedStore?._id && !selectedStore?.id) {
-      console.error("❌ No store selected for publishing.");
-      alert("Please select a store first before publishing.");
-      return;
-    }
-
-    console.log("🚀 Publishing product:", productIds, "to store:", selectedStore.name);
-
-    const response = await fetch(`https://hivehub-1.onrender.com/api/publish-to-website/${productIds}`, {
-      method: "PUT",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        published: true,
-        storeId: selectedStore._id || selectedStore.id,
-      }),
+    const resp = await fetch(`https://hivehub-1.onrender.com/api/stores/${storeId}/html`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
 
-    console.log("Publish response status:", response.status);
-
-    if (!response.ok) {
-      const error = await response.json();
-      console.error("Failed to publish product:", error);
-      alert(error.message || "Failed to publish product");
-      return;
-    }
-
-    // ✅ 1. Refresh user's own product data
-    await fetchMyProducts();
-
-    // ✅ 2. Fetch the canonical published list for this store from backend
-    const resp = await fetch(
-      `https://hivehub-1.onrender.com/api/stores/${selectedStore._id || selectedStore.id}/published-products`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
     if (!resp.ok) {
-      console.error("Failed to fetch store published products");
+      console.error(`❌ Failed to regenerate site for store ${storeId}`, await resp.text());
       return;
     }
 
-    const { products: publishedProductsFromServer } = await resp.json();
-    console.log("✅ Published products fetched for website:", publishedProductsFromServer?.length || 0);
+    const html = await resp.text();
+    const blobUrl = URL.createObjectURL(new Blob([html], { type: "text/html" }));
 
-    // ✅ 3. Build website HTML with canonical data
-    const websiteContent = generateWebsiteContent(selectedStore, publishedProductsFromServer || []);
-
-    const blob = new Blob([websiteContent], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-
-    // ✅ 4. Update local store URLs for instant preview
-    setStores((prevStores) =>
-      prevStores.map((s) =>
-        String(s._id || s.id) === String(selectedStore._id || selectedStore.id)
-          ? { ...s, localUrl: url }
-          : s
+    setStores((prev) =>
+      prev.map((s) =>
+        String(s._id || s.id) === String(storeId) ? { ...s, localUrl: blobUrl } : s
       )
     );
 
-    setSelectedStore((prev) => (prev ? { ...prev, localUrl: url } : prev));
+    setSelectedStore((prev) =>
+      prev && String(prev._id || prev.id) === String(storeId)
+        ? { ...prev, localUrl: blobUrl }
+        : prev
+    );
 
-    console.log("🌐 Store site regenerated with latest published products!");
-  } catch (error) {
-    console.error("❌ Error publishing product:", error);
-    alert("Something went wrong while publishing.");
+    console.log(`✅ Storefront regenerated for ${storeId}`);
+  } catch (err) {
+    console.error(`❌ Error regenerating site for store ${storeId}`, err);
+  }
+}
+
+
+
+
+
+
+
+const publishProduct = async (item) => {
+  try {
+    const storeId = selectedStore || item.storeId; // selectedStore is the ID from the <select>
+    if (!storeId) {
+      alert("Select a store first");
+      return;
+    }
+
+    const productId = item.productId || item.id;
+    const resp = await fetch(`https://hivehub-1.onrender.com/api/publish-to-website/${productId}`, {
+      method: "PUT",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ published: true, storeId })
+    });
+
+    if (!resp.ok) {
+      const e = await resp.json().catch(() => ({}));
+      console.error("Publish failed:", e);
+      alert(e?.message || "Publish failed");
+      return;
+    }
+
+    await fetchMyProducts(); // refresh table
+
+    // 🔁 Rebuild storefront HTML from server's canonical list
+    await regenerateLocalSiteFromServer(storeId);
+  } catch (e) {
+    console.error("publishProduct error:", e);
   }
 };
 
@@ -570,46 +565,81 @@ const generateWithAI = async (field, currentValue, nameValue) => {
 
 
 
-const createLocalWebsite = (store) => {
-  if (!store) return null;
+// const createLocalWebsite = (store) => {
+//   if (!store) return null;
 
-  // 1) Get published products for this store from state
-  const publishedProducts = (myProducts || []).filter((item) => {
-    const itemStoreId = String(item.storeId || "");
-    const thisStoreId = String(store._id || store.id || "");
-    return Boolean(item.published) && itemStoreId === thisStoreId;
-  });
+//   // 1) Get published products for this store from state
+//   const publishedProducts = (myProducts || []).filter((item) => {
+//     const itemStoreId = String(item.storeId || "");
+//     const thisStoreId = String(store._id || store.id || "");
+//     return Boolean(item.published) && itemStoreId === thisStoreId;
+//   });
 
-  // 2) Generate HTML
-  const websiteContent = generateWebsiteContent(store, publishedProducts);
+//   // 2) Generate HTML
+//   const websiteContent = generateWebsiteContent(store, publishedProducts);
 
-  // 3) Create blob URL
+//   // 3) Create blob URL
+//   const blob = new Blob([websiteContent], { type: "text/html" });
+//   const url = URL.createObjectURL(blob);
+
+//   // 4) Update stores array (⚠️ use _id, not id)
+//   setStores((prev) => {
+//     if (!Array.isArray(prev)) return prev;
+//     return prev.map((s) => {
+//       const sid = String(s._id || s.id || "");
+//       const tid = String(store._id || store.id || "");
+//       return sid === tid ? { ...s, localUrl: url } : s;
+//     });
+//   });
+
+//   // 5) If selected store matches, also update it
+//   setSelectedStore((prev) => {
+//     if (!prev) return prev;
+//     const prevId = String(prev._id || prev.id || "");
+//     const thisId = String(store._id || store.id || "");
+//     if (prevId === thisId) {
+//       return { ...prev, localUrl: url };
+//     }
+//     return prev;
+//   });
+
+//   return url;
+// };
+
+
+
+const createLocalWebsite = (storeObj) => {
+  if (!storeObj) return null;
+
+  const publishedProducts = (myProducts || []).filter(
+    (p) => p.published && String(p.storeId) === String(storeObj._id || storeObj.id)
+  );
+
+  const websiteContent = generateWebsiteContent(storeObj, publishedProducts);
   const blob = new Blob([websiteContent], { type: "text/html" });
   const url = URL.createObjectURL(blob);
 
-  // 4) Update stores array (⚠️ use _id, not id)
-  setStores((prev) => {
-    if (!Array.isArray(prev)) return prev;
-    return prev.map((s) => {
-      const sid = String(s._id || s.id || "");
-      const tid = String(store._id || store.id || "");
-      return sid === tid ? { ...s, localUrl: url } : s;
-    });
-  });
+  setStores((prev) =>
+    prev.map((s) =>
+      String(s._id || s.id) === String(storeObj._id || storeObj.id)
+        ? { ...s, localUrl: url }
+        : s
+    )
+  );
 
-  // 5) If selected store matches, also update it
-  setSelectedStore((prev) => {
-    if (!prev) return prev;
-    const prevId = String(prev._id || prev.id || "");
-    const thisId = String(store._id || store.id || "");
-    if (prevId === thisId) {
-      return { ...prev, localUrl: url };
-    }
-    return prev;
-  });
+  setSelectedStore((prev) =>
+    prev && String(prev._id || prev.id) === String(storeObj._id || storeObj.id)
+      ? { ...prev, localUrl: url }
+      : prev
+  );
 
+  console.log(`🧩 Rebuilt local website for store ${storeObj.name}`);
   return url;
 };
+
+
+
+
 
 
 
@@ -669,13 +699,66 @@ useEffect(() => {
 
 
 
-  const openStoreWebsite = (store) => {
-  const slug = store.customDomain
-    ? store.customDomain.replace(/^https?:\/\//, "")
-    : store.domain?.split("/").pop();
+//   const openStoreWebsite = (store) => {
+//   const slug = store.customDomain
+//     ? store.customDomain.replace(/^https?:\/\//, "")
+//     : store.domain?.split("/").pop();
 
-  // Open using the slug route
-  window.open(`https://hivehub-tr8u.vercel.app/store/${slug}`, "_blank");
+//   // Open using the slug route
+//   window.open(`https://hivehub-tr8u.vercel.app//store/${slug}`, "_blank");
+// };
+
+
+
+
+// const openStoreWebsite = (storeIdOrObj) => {
+//   const storeObj = typeof storeIdOrObj === "object"
+//     ? storeIdOrObj
+//     : stores.find(s => String(s._id || s.id) === String(storeIdOrObj));
+
+//   if (!storeObj) {
+//     alert("Store not found");
+//     return;
+//   }
+
+//   let url = storeObj.localUrl;
+//   if (!url) {
+//     url = createLocalWebsite(storeObj);
+//   }
+
+//   window.open(url, "_blank");
+// };
+
+
+
+
+const openStoreWebsite = async (storeIdOrObj) => {
+  const storeObj =
+    typeof storeIdOrObj === "object"
+      ? storeIdOrObj
+      : stores.find((s) => String(s._id || s.id) === String(storeIdOrObj));
+
+  if (!storeObj) {
+    alert("Store not found");
+    return;
+  }
+
+  const id = String(storeObj._id || storeObj.id);
+  // always rebuild from WebProduct before opening
+  const freshUrl = await refreshStorePreview(id);
+
+  // use the freshly built url if available, fallback to any existing localUrl
+  const url =
+    freshUrl ||
+    stores.find((s) => String(s._id || s.id) === id)?.localUrl ||
+    storeObj.localUrl;
+
+  if (!url) {
+    alert("Could not build the storefront. Please try again.");
+    return;
+  }
+
+  window.open(url, "_blank");
 };
 
 
@@ -718,52 +801,7 @@ useEffect(() => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* {currentView === 'dashboard' && (
-          <div>
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-gray-600">Welcome back! Here's what's happening with your store.</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <DollarSign className="h-8 w-8 text-green-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                    <p className="text-2xl font-bold text-gray-900">${dashboardMetrics.totalRevenue.toFixed(2)}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <ShoppingCart className="h-8 w-8 text-blue-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Total Orders</p>
-                    <p className="text-2xl font-bold text-gray-900">{dashboardMetrics.totalOrders}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <Package className="h-8 w-8 text-purple-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Products</p>
-                    <p className="text-2xl font-bold text-gray-900">{dashboardMetrics.totalProducts}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <Eye className="h-8 w-8 text-orange-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Store Views</p>
-                    <p className="text-2xl font-bold text-gray-900">{dashboardMetrics.storeViews}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )} */}
+    
 
         {currentView === "dashboard" && (
           <Dashboard
@@ -776,201 +814,7 @@ useEffect(() => {
         )}
 
 
-{console.log("Store data:", stores)}
-        {/* {currentView === 'stores' && (
-      
-
-          <div>
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Stores</h1>
-                <p className="text-gray-600">Create and manage your online stores</p>
-              </div>
-              <button onClick={() => setCurrentView('create-store')} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center">
-                <Plus className="h-5 w-5 mr-2" />
-                Create Store
-              </button>
-            </div>
-
-            {stores.length === 0 ? (
-              <div className="bg-white p-12 rounded-lg shadow text-center">
-                <Store className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">No stores yet</h2>
-                <p className="text-gray-600 mb-6">Create your first store to start selling products</p>
-                <button onClick={() => setCurrentView('create-store')} className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
-                  Create Your First Store
-                </button>
-              </div>
-            ) : (
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {stores.map((store) => (
-                  <div
-                    key={store?.id}
-                    className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{store?.name}</h3>
-                        <p className="text-sm text-gray-600 capitalize">{store?.category}</p>
-                      </div>
-                      <button
-                        onClick={() => openStoreWebsite(store)}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        <ExternalLink className="h-5 w-5" />
-                      </button>
-                    </div>
-
-                    
-                    <div className="mb-4">
-  <p className="text-sm text-gray-800 font-medium truncate">
-    {store?.customDomain || store?.domain}
-  </p>
-  <div className="flex gap-2 mt-2">
-    <button
-      onClick={() => {
-        const copyUrl = (store?.customDomain || store.domain).startsWith("http")
-          ? (store?.customDomain || store.domain)
-          : `${window.location.origin}/${(store?.customDomain || store.domain).domain.replace(/^\//, "")}`;
-
-        navigator.clipboard
-          .writeText(copyUrl)
-          .then(() => alert("Copied to clipboard!"))
-          .catch(() => alert("Failed to copy"));
-      }}
-      className="flex items-center text-xs text-gray-600 hover:text-gray-900"
-    >
-      <Copy className="h-4 w-4 mr-1" />
-      Copy
-    </button>
-    <button onClick={() => navigate(`/builder/${store._id}`, {
-      state: { store, publishedProducts: myProducts.filter(p => p.published) }
-    })
-    }
-    >
-      Edit Store</button>
-
-
-    <button
-      onClick={() => {
-        if (navigator.share) {
-          const shareUrl = store.domain.startsWith("http")
-            ? store?.domain
-            : `${window.location.origin}/${store?.domain.replace(/^\//, "")}`;
-
-          navigator
-            .share({
-              title: store?.name || "My Store",
-              url: shareUrl,
-            })
-            .catch((err) => console.error("Share failed:", err));
-        } else {
-          alert("Sharing not supported on this device");
-        }
-      }}
-      className="flex items-center text-xs text-gray-600 hover:text-gray-900"
-    >
-      <Share2 className="h-4 w-4 mr-1" />
-      Share
-    </button>
-    <button
-    onClick={() => {
-      const newDomain = prompt("Enter your custom domain:", store?.customDomain || "");
-      if (newDomain) {
-        fetch(`https://hivehub-1.onrender.com/api/stores/${store?._id}/domain`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ customDomain: newDomain }),
-        })
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.success) {
-              setStores((prev) =>
-                prev.map((s) =>
-                  s._id === store._id ? data.store : s
-                )
-              );
-            } else {
-              alert(data.error || "Failed to update domain");
-            }
-          });
-      }
-    }}
-    className="ml-2 text-xs text-blue-600 hover:text-blue-900"
-  >
-    Edit Domain
-  </button>
-  </div>
-</div>
-
-                    <div className="flex justify-between items-center">
-                      <button
-                        onClick={() => openStoreWebsite(store)}
-                        className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
-                      >
-                        <Globe className="h-4 w-4 mr-1" />
-                        View Live Store
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedStore(store);
-                          setCurrentView("inventory");
-                        }}
-                        className="text-sm text-gray-600 hover:text-gray-800"
-                      >
-                        Manage
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {currentView === 'create-store' && (
-          <div>
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold text-gray-900">Create New Store</h1>
-              <p className="text-gray-600">Set up your online store in just a few steps</p>
-            </div>
-            <div className="max-w-2xl mx-auto">
-              <div className="bg-white p-8 rounded-lg shadow">
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Store Name</label>
-                    <input type="text" value={newStore.name} onChange={(e) => setNewStore({...newStore, name: e.target.value})} placeholder="Enter your store name" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">What do you want to sell?</label>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {storeCategories.map(category => (
-                        <button key={category.id} onClick={() => setNewStore({...newStore, category: category.id})} className={`p-4 border rounded-lg text-center transition-colors ${newStore.category === category.id ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300 hover:border-gray-400'}`}>
-                          <div className="text-2xl mb-2">{category.icon}</div>
-                          <div className="text-sm font-medium">{category.name}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex justify-between">
-                    <button onClick={() => setCurrentView('stores')} className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
-                    <button onClick={createStore} disabled={!newStore.name || !newStore.category} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">Generate Website</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )} */}
-
-
 <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-indigo-50 to-white flex flex-col relative overflow-hidden">
-
-  {/* <div className="absolute top-0 left-0 w-[800px] h-[800px] bg-gradient-to-br from-blue-200 via-blue-100 to-transparent rounded-full blur-3xl opacity-40 animate-pulse"></div>
-  <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-gradient-to-tr from-indigo-200 via-purple-100 to-transparent rounded-full blur-3xl opacity-40 animate-pulse delay-500"></div> */}
 
   <div className="flex-1 px-10 py-12 relative z-10 backdrop-blur-sm">
     {currentView === 'stores' && (
@@ -1209,210 +1053,6 @@ useEffect(() => {
 
 
 
-        {/* {currentView === 'products' && (
-          <div>
-            <div className="flex justify-end mb-4">
-   
-
-    <div className="relative inline-block text-left">
-
-
- <button
-    onClick={() => setOpenDropdown((prev) => !prev)}
-    className="flex items-center bg-green-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-green-700 transition"
-  >
-    + Add Product
-    <ChevronDown className="ml-2 w-4 h-4" />
-  </button>
-
- 
-
-  {openDropdown && (
-    <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border z-50">
-      <button
-        onClick={() => {
-          setProductMode("manual");
-          setShowProductModal(true);
-          setOpenDropdown(false);
-        }}
-        className="block w-full text-left px-4 py-2 hover:bg-gray-100 rounded-t-lg"
-      >
-        Manual
-      </button>
-      <button
-        onClick={() => {
-          setProductMode("ai");
-          setShowProductModal(true);
-          setOpenDropdown(false);
-        }}
-        className="block w-full text-left px-4 py-2 hover:bg-gray-100 rounded-b-lg"
-      >
-        AI
-      </button>
-    </div>
-  )}
-</div>
-
-   
-
-  </div>
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-                <p className="text-gray-600">{selectedStore ? `Add products to ${selectedStore.name}` : 'Select products to add to your inventory'}</p>
-              </div>
-              {selectedStore && (
-                <div className="text-sm text-gray-600">Store: <span className="font-medium">{selectedStore.name}</span></div>
-              )}
-            </div>
-
-
-<div className="bg-white p-4 rounded-lg shadow mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-          <div className="flex space-x-4">
-            {[
-              { id: "trending", label: "Trending", icon: TrendingUp },
-              { id: "revenue", label: "Revenue Based", icon: DollarSign },
-              { id: "new", label: "New Arrivals", icon: Calendar },
-              { id: "myprod", label: "My Products", icon: Calendar },
-
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center px-4 py-2 rounded-lg transition-colors ${
-                  activeTab === tab.id
-                    ? "bg-blue-100 text-blue-700"
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
-              >
-                <tab.icon className="h-4 w-4 mr-2" />
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          <div className="relative">
-            <Search className="h-5 w-5 absolute left-3 top-2.5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        </div>
-      </div>
-
-
-      {activeTab === "myprod" && (
-  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-    {newArrivals.filter((p) => p.userId === userId).length === 0 ? (
-      <p className="text-gray-500">You haven’t added any products yet.</p>
-    ) : (
-     newArrivals
-        .filter((p) => p.userId === userId) 
-        .map((product) => (
-        <div
-          key={product._id}
-          className="bg-white border rounded-lg shadow hover:shadow-md transition p-4"
-        >
-          {Array.isArray(product.image) ? (
-            <div className="flex gap-2 overflow-x-auto">
-              {product.image.map((img, i) => (
-                <img
-                  key={i}
-                  src={img}
-                  alt={product.name}
-                  className="h-56 w-full object-cover rounded"
-                />
-              ))}
-            </div>
-          ) : (
-            <img
-              src={product.image}
-              alt={product.name}
-              className="h-64 w-full object-cover rounded mb-2"
-            />
-          )}
-
-          <h3 className="text-lg font-semibold">{product.name}</h3>
-          <p className="text-sm text-gray-500">{product.category}</p>
-          <p className="mt-1 text-gray-700 text-sm line-clamp-2">
-            {product.description}
-          </p>
-
-          <div className="flex justify-between items-center mt-3">
-            <span className="text-gray-900 font-bold">
-              ${product.sellingPrice}
-            </span>
-            <span className="text-sm text-gray-500 line-through">
-              ${product.originalPrice}
-            </span>
-          </div>
-
-          <p className="text-green-600 text-sm mt-1">
-            Profit: ${product.potentialProfit}
-          </p>
-        </div>
-      ))
-    )}
-  </div>
-)}
-
-
-            {loading ? (
-              <div className="flex justify-center items-center py-12">
-                <Loader className="h-8 w-8 animate-spin text-blue-600" />
-                <span className="ml-2 text-gray-600">Loading products...</span>
-              </div>
-            ) : error ? (
-              <div className="text-center py-12">
-                <div className="text-red-500 mb-4">⚠️ Error loading products</div>
-                <p className="text-gray-600 mb-4">{error}</p>
-                <button onClick={() => fetchProducts()} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Retry</button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {currentProducts.map(product => (
-                  <div key={product.id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow overflow-hidden">
-                    <img src={product.image} alt={product.name} className="w-full h-48 object-cover" />
-                    <div className="p-4">
-                      <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">{product.name}</h3>
-                      <div className="flex items-center mb-2">
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <Star key={i} className={`h-4 w-4 ${i < Math.floor(product.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
-                          ))}
-                          <span className="ml-2 text-sm text-gray-600">({product.reviews})</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <span className="text-lg font-bold text-gray-900">${product.price}</span>
-                          <span className="ml-2 text-sm text-gray-500 line-through">${product.originalPrice}</span>
-                        </div>
-                      </div>
-                     
-                      <button
-                      onClick={() => {
-                        setSelectedProduct(product);
-                        setIsEditing(false); 
-                        setViewProductModal(true)
-                      }}
-                      className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      View Details
-                    </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )} */}
-
-
         {currentView === 'products' && (
   <div className="min-h-screen w-full bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex flex-col px-8 py-10">
     {/* Header with add product */}
@@ -1612,91 +1252,6 @@ useEffect(() => {
 )}
 
 
-        {/* {currentView === 'inventory' && (
-          <div>
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Inventory</h1>
-                <p className="text-gray-600">Manage your products and pricing</p>
-              </div>
-              <button onClick={() => setCurrentView('products')} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center">
-                <Plus className="h-5 w-5 mr-2" />
-                Add Products
-              </button>
-              <select
-                value={selectedStore}
-                onChange={(e) => setSelectedStore(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2"
-              >
-                <option value="">All Stores</option>
-                {stores.map((store) => (
-                  <option key={store._id} value={store._id}>
-                    {store.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {myProducts.length === 0 ? (
-              <div className="bg-white p-12 rounded-lg shadow text-center">
-                <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">No products in inventory</h2>
-                <p className="text-gray-600 mb-6">Add products from our catalog to start selling</p>
-                <button onClick={() => setCurrentView('products')} className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">Browse Products</button>
-              </div>
-            ) : (
-              <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost Price</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Selling Price</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      
-                      {myProducts
-                        .filter(item => !selectedStore || item.storeId === selectedStore)
-                        .map(item => (
-                          <InventoryRow
-                            key={item._id || item.productId}
-                            item={item}
-                            onDelete={handleDelete}
-                            onUpdate={updateInventoryItem}
-                            onPublish={() => publishProduct(item)}
-                            generateWithAI={generateWithAI}
-                          />
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {selectedStore && myProducts.some(item => item.published && item.storeId === selectedStore.id) && (
-              <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-blue-900 mb-2">🎉 Your Store is Live!</h3>
-                    <p className="text-blue-700 mb-2">Your store "<strong>{selectedStore.name}</strong>" is ready with {myProducts.filter(item => item.published && item.storeId === selectedStore.id).length} published products!</p>
-                    <p className="text-blue-600 text-sm">Click the button to view your live local website →</p>
-                  </div>
-                  <button onClick={() => openStoreWebsite(selectedStore)} className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 flex items-center shadow-lg transition-all transform hover:scale-105">
-                    <Globe className="h-5 w-5 mr-2" />
-                    Open Live Store
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )} */}
-
-
         {currentView === 'inventory' && (
   <div className="min-h-screen w-full bg-gradient-to-br from-gray-50 via-white to-gray-100 p-8 rounded-2xl shadow-inner">
     {/* Header */}
@@ -1794,7 +1349,8 @@ useEffect(() => {
             <p className="text-blue-600 text-sm">Click below to open your live storefront →</p>
           </div>
           <button
-            onClick={() => openStoreWebsite(selectedStore)}
+            // onClick={() => openStoreWebsite(selectedStore)}
+            onClick={() => openStoreWebsite(selectedStore?._id || selectedStore?.id || selectedStore)}
             className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 flex items-center shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
           >
             <Globe className="h-5 w-5 mr-2" />
@@ -1879,30 +1435,7 @@ useEffect(() => {
   </div>
         )}
 
-        {/* {currentView === 'community' && (
-  <div>
-    <h1 className="text-2xl font-bold text-gray-900 mb-6">Community</h1>
-
     
-    <div className="bg-white p-4 rounded-lg shadow mb-6">
-      <textarea placeholder="What's on your mind?" className="w-full border rounded-md p-3 text-gray-700"></textarea>
-      <button className="mt-3 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Post</button>
-    </div>
-
-    
-    <div className="space-y-4">
-      <div className="bg-white p-4 rounded-lg shadow">
-        <p className="font-medium text-gray-900">🚀 Alex Johnson</p>
-        <p className="text-gray-700 mt-2">Just launched my first store on DropShip Pro!</p>
-      </div>
-      <div className="bg-white p-4 rounded-lg shadow">
-        <p className="font-medium text-gray-900">💡 Sarah Lee</p>
-        <p className="text-gray-700 mt-2">Does anyone have tips on increasing store traffic?</p>
-      </div>
-    </div>
-  </div>
-        )} */}
-
         {currentView === 'community' && <Community />}
 
 
@@ -1986,57 +1519,7 @@ const InventoryRow = ({ item, onUpdate, onPublish, generateWithAI, onDelete }) =
   
 
   return (
-    // <>
-    // <tr>
-    //   <td className="px-6 py-4 whitespace-nowrap">
-    //     <div className="flex items-center">
-    //       <img src={item.image} alt="" className="h-12 w-12 rounded-lg object-cover mr-3" />
-    //       <div>
-    //         <div className="text-sm font-medium text-gray-900">{item.name}</div>
-    //         <div className="text-sm text-gray-500">{item.category}</div>
-    //       </div>
-    //     </div>
-    //   </td>
-    //   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${item.price}</td>
-    //   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${item.sellingPrice}</td>
-    //   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.quantity}</td>
-    //   <td className="px-6 py-4 whitespace-nowrap">
-    //     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-    //       {item.published ? 'Published' : 'Unpublished'}
-    //     </span>
-    //   </td>
-    //   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-    //     <button onClick={() => setShowModal(true)} className="text-blue-600 hover:text-blue-900">
-    //       <Edit3 className="h-4 w-4" />
-    //     </button>
-    //     {!item.published && (
-    //       <button onClick={onPublish} className="text-green-600 hover:text-green-900" title="Publish to website">
-    //         <Upload className="h-4 w-4" />
-    //       </button>
-    //     )}
-    //     <button className="text-gray-400 hover:text-gray-600">
-    //       <Eye className="h-4 w-4" />
-    //     </button>
-    //     <button
-    //       onClick={() => onDelete(item.productId, item)}  // ✅ use onDelete
-    //       className="text-red-600 hover:text-red-900"
-    //       title="Delete product"
-    //     >
-    //       <X className="h-4 w-4" />
-    //     </button>
-    //   </td>
-    // </tr>
-    // {showModal && (
-    //     <EditInventoryModal
-    //       item={item}
-    //       onUpdate={onUpdate}
-    //       generateWithAI={generateWithAI}
-    //       onClose={() => setShowModal(false)}
-    //     />
-    //   )}
-    // </>
-
-
+   
     <>
   <tr
     className="group transition-all duration-300 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 border-b border-gray-100"

@@ -10,6 +10,8 @@ export const getStoreBlocks = (store, publishedProducts) => {
     </section>
   `;
 
+  console.log("Published Products:888888888888888888888888888", publishedProducts);
+
   // PRODUCTS SECTION
   const productsGrid =
     publishedProducts.length === 0

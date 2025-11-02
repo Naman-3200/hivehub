@@ -304,27 +304,94 @@ export const storeProduct = async (req, res) => {
 // };
 
 
+// export const getStoreWebsiteHTML = async (req, res) => {
+//   try {
+//     const { storeId } = req.params;
+//     const store = await Store.findById(storeId);
+//     if (!store) return res.status(404).send("Store not found");
+
+//     // If custom HTML exists, show it
+//     if (store.websiteHtml && store.websiteHtml.trim().length > 0) {
+//       res.set("Content-Type", "text/html");
+//       return res.status(200).send(store.websiteHtml);
+//     }
+
+//     // ✅ Query by storeId String
+//     const products = await WebProduct.find({
+//       storeId: String(store._id),
+//       published: true,
+//     }).lean();
+
+//     const html = generateWebsiteContent(store, products);
+//     res.set("Content-Type", "text/html");
+//     return res.status(200).send(html);
+//   } catch (err) {
+//     console.error("Error generating store HTML:", err);
+//     return res.status(500).json({ error: "Failed to generate HTML" });
+//   }
+// };
+
+
+// ✅ Controller to return both store data + published WebProducts
+export const getStorePublishedProducts = async (req, res) => {
+  try {
+    const { storeId } = req.params;
+
+    const store = await Store.findById(storeId);
+    if (!store) return res.status(404).json({ success: false, message: "Store not found" });
+
+    // Fetch published products from WebProduct collection
+    const products = await WebProduct.find({
+      storeId: String(store._id),
+      published: true,
+    }).lean();
+
+    return res.status(200).json({
+      success: true,
+      store,
+      products,
+      count: products.length,
+    });
+  } catch (error) {
+    console.error("❌ getStorePublishedProducts error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch published products",
+      error: error.message,
+    });
+  }
+};
+
+
 export const getStoreWebsiteHTML = async (req, res) => {
   try {
     const { storeId } = req.params;
     const store = await Store.findById(storeId);
-    if (!store) {
-      return res.status(404).send("Store not found");
-    }
+    if (!store) return res.status(404).send("Store not found");
 
-    // If admin/editor has saved custom website HTML, use it
+    // ✅ If you already have saved HTML
     if (store.websiteHtml && store.websiteHtml.trim().length > 0) {
       res.set("Content-Type", "text/html");
       return res.status(200).send(store.websiteHtml);
     }
 
-    // otherwise generate from current published products
-    const products = await WebProduct.find({
-      storeId: store._id,
-      published: true,
-    });
+    // ✅ FIXED: fetch from StoreProduct instead of WebProduct
+    // Try WebProduct first, fallback to StoreProduct if empty
+let products = await WebProduct.find({
+  storeId: String(store._id),
+  published: true,
+}).lean();
 
-    const html = generateWebsiteContent(store, products);
+// fallback if WebProduct empty
+if (!products.length) {
+  products = await StoreProduct.find({
+    storeId: String(store._id),
+    published: true,
+  }).lean();
+}
+
+const html = generateWebsiteContent(store, products);
+
     res.set("Content-Type", "text/html");
     return res.status(200).send(html);
   } catch (err) {
@@ -547,3 +614,24 @@ export const updateWebsite = async (req, res) => {
   }
 };
 
+
+
+
+// GET /api/stores/:storeId/published-products
+export const listPublishedProductsForStore = async (req, res) => {
+  try {
+    const { storeId } = req.params;
+
+    // prefer WebProduct as the canonical source
+    const products = await WebProduct.find(
+      { storeId, published: true },
+      // only the fields your site needs
+      { productId: 1, name: 1, price: 1, sellingPrice: 1, image: 1, category: 1, quantity: 1, _id: 0 }
+    ).lean();
+
+    return res.json({ products });
+  } catch (e) {
+    console.error("listPublishedProductsForStore error:", e);
+    res.status(500).json({ message: "Server error" });
+  }
+};
