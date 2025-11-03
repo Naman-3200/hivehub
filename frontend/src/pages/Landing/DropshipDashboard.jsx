@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {useNavigate} from 'react-router-dom';
 import axios from "axios";
 import { generateWebsiteContent } from "../generateWebsiteContent.jsx";
 import Dashboard from "./Dashboard.jsx"; // adjust path if needed
-
+import { createWhopCheckout } from '../../utils/subscriptionService.js';
 
 
 import { 
@@ -12,6 +12,12 @@ import {
 } from 'lucide-react';
 import AddProductModal from '../../components/AddProductModal';
 import ViewProduct from '../../components/ViewProduct';
+  import { getNotifications, markAllAsRead } from "../../utils/notificationService.js";
+  import { AuthContext } from "../../context/authContext.jsx";
+  import { getUserProfile, updateUserProfile } from "../../utils/userService.js";
+
+
+
 
 const DropshipDashboard = () => {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -34,12 +40,53 @@ const DropshipDashboard = () => {
   const [productMode, setProductMode] = useState(null);
   const [openDropdown, setOpenDropdown] = useState(false);
   const [genProducts, setGenProducts] = useState([]);
+const [notifications, setNotifications] = useState([]);
+const [loadingNotifications, setLoadingNotifications] = useState(true);
+const { user } = useContext(AuthContext);
+const [userData, setUserData] = useState(null);
+// const [loading, setLoading] = useState(true);
+const [formData, setFormData] = useState({ name: "", profilePicture: "" });
 
   const navigate = useNavigate();
   
   
   console.log("myproducts:", myProducts);
 
+  useEffect(() => {
+  if (currentView === "settings") fetchUserProfile();
+}, [currentView]);
+
+const fetchUserProfile = async () => {
+  setLoading(true);
+  try {
+    const data = await getUserProfile(token);
+    if (data.success) {
+      setUserData(data.user);
+      setFormData({
+        name: data.user.name,
+        profilePicture: data.user.profilePicture || "",
+      });
+    }
+  } catch (err) {
+    console.error("Error fetching user data:", err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleSaveProfile = async () => {
+  try {
+    const data = await updateUserProfile(token, formData);
+    if (data.success) {
+      alert("Profile updated successfully!");
+      setUserData(data.user);
+    } else {
+      alert(data.message || "Failed to update profile");
+    }
+  } catch (err) {
+    console.error("Error updating profile:", err);
+  }
+};
 
 
 
@@ -59,7 +106,20 @@ const [isEditing, setIsEditing] = useState(false);
 
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem("token") : null;
 
-  
+  const handleUpgradePlan = async () => {
+  try {
+    const selectedPlanId = "plan_2nmlTo9tmKpBF"; // 🔁 replace with actual Whop product ID
+    const response = await createWhopCheckout(token, selectedPlanId);
+    if (response.success && response.checkoutUrl) {
+      window.location.href = response.checkoutUrl; // redirect to Whop checkout
+    } else {
+      alert(response.message || "Unable to start checkout");
+    }
+  } catch (err) {
+    console.error("Upgrade plan error:", err);
+    alert("Something went wrong while redirecting to Whop");
+  }
+};
 
 
 
@@ -103,6 +163,25 @@ const saveStoreToBackend = async (storeData) => {
   } catch (err) {
     console.error("Error saving store:", err);
     return null;
+  }
+};
+
+
+useEffect(() => {
+  if (currentView === "notifications" && user?._id) {
+    fetchNotifications();
+  }
+}, [currentView]);
+
+const fetchNotifications = async () => {
+  setLoadingNotifications(true);
+  try {
+    const data = await getNotifications(user._id);
+    if (data.success) setNotifications(data.notifications);
+  } catch (err) {
+    console.error("Error fetching notifications:", err);
+  } finally {
+    setLoadingNotifications(false);
   }
 };
 
@@ -287,7 +366,7 @@ const getProductsByCategory = (category) => {
     const storeId = `${newStore.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
 
 
-    return `https://hivehub-tr8u.vercel.app//store/${storeId}`;
+    return `https://hivehub-tr8u.vercel.app/store/${storeId}`;
   };
 
   const createStore = async () => {
@@ -1388,52 +1467,148 @@ const openStoreWebsite = async (storeIdOrObj) => {
   </div>
         )}
 
-        {currentView === 'notifications' && (
-  <div>
-    <h1 className="text-2xl font-bold text-gray-900 mb-4">Notifications</h1>
-    <div className="space-y-4">
-      <div className="bg-white p-4 rounded-lg shadow">
-        <p className="font-medium text-gray-900">📦 Your order #1234 has been shipped</p>
-        <p className="text-sm text-gray-600">2 hours ago</p>
-      </div>
-      <div className="bg-white p-4 rounded-lg shadow">
-        <p className="font-medium text-gray-900">💳 Payment received for order #1229</p>
-        <p className="text-sm text-gray-600">Yesterday</p>
-      </div>
-      <div className="bg-white p-4 rounded-lg shadow">
-        <p className="font-medium text-gray-900">🎉 New feature update is available</p>
-        <p className="text-sm text-gray-600">2 days ago</p>
-      </div>
+{currentView === 'notifications' && (
+  <div className="min-h-screen bg-gray-50 px-6 py-10">
+    <div className="flex justify-between items-center mb-6">
+      <h1 className="text-3xl font-bold text-gray-900">🔔 Notifications</h1>
+      <button
+        onClick={() => {
+          markAllAsRead(user._id);
+          setNotifications((prev) => prev.map(n => ({ ...n, isRead: true })));
+        }}
+        className="text-sm text-blue-600 hover:text-blue-800 underline"
+      >
+        Mark all as read
+      </button>
     </div>
+
+    {loadingNotifications ? (
+      <p className="text-gray-500 text-center">Loading...</p>
+    ) : notifications.length === 0 ? (
+      <p className="text-gray-500 text-center">No notifications yet 📭</p>
+    ) : (
+      <div className="space-y-4">
+        {notifications.map((n) => (
+          <div
+            key={n._id}
+            className={`bg-white p-4 rounded-xl shadow transition-all ${
+              n.isRead ? "opacity-80" : "border-l-4 border-indigo-500"
+            }`}
+          >
+            <p className="font-medium text-gray-900 flex items-center gap-2">
+              {n.icon || "🔔"} {n.message}
+            </p>
+            <p className="text-sm text-gray-600">
+              {new Date(n.createdAt).toLocaleString()}
+            </p>
+          </div>
+        ))}
+      </div>
+    )}
   </div>
-        )}
+)}
 
         {currentView === 'settings' && (
-  <div>
-    <h1 className="text-2xl font-bold text-gray-900 mb-6">Settings</h1>
+  <div className="min-h-screen bg-gray-50 px-6 py-10">
+    <h1 className="text-3xl font-bold text-gray-900 mb-6">⚙️ Settings</h1>
 
-    <div className="bg-white p-6 rounded-lg shadow mb-8">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Settings</h2>
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm text-gray-600">Name</label>
-          <input type="text" value="John Doe" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md" readOnly />
-        </div>
-        <div>
-          <label className="block text-sm text-gray-600">Email</label>
-          <input type="email" value="john@example.com" className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md" readOnly />
-        </div>
-      </div>
-    </div>
+    {loading ? (
+      <p className="text-gray-600 text-center">Loading your profile...</p>
+    ) : (
+      <>
+        {/* Profile Settings */}
+        <div className="bg-white p-6 rounded-xl shadow mb-8 max-w-xl">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Settings</h2>
 
-    <div className="bg-white p-6 rounded-lg shadow">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Subscription Plan</h2>
-      <p className="text-gray-700">Current Plan: <span className="font-medium">Pro</span></p>
-      <p className="text-gray-500 text-sm mt-2">Renews on: 12th Oct 2025</p>
-      <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Upgrade Plan</button>
-    </div>
+          <div className="space-y-5">
+            <div className="text-center">
+              <img
+                src={
+                  formData.profilePicture ||
+                  "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                }
+                alt="Profile"
+                className="w-24 h-24 rounded-full mx-auto border mb-3"
+              />
+              <input
+                type="text"
+                value={formData.profilePicture}
+                onChange={(e) =>
+                  setFormData({ ...formData, profilePicture: e.target.value })
+                }
+                placeholder="Profile picture URL"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-600">Name</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-600">Email</label>
+              <input
+                type="email"
+                value={userData?.email || ""}
+                readOnly
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+              />
+            </div>
+
+            <button
+              onClick={handleSaveProfile}
+              className="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 transition"
+            >
+              Save Changes
+            </button>
+          </div>
+        </div>
+
+        {/* Subscription Plan */}
+        <div className="bg-white p-6 rounded-xl shadow max-w-xl">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            Subscription Plan
+          </h2>
+
+          <p className="text-gray-700">
+            Current Plan:{" "}
+            <span className="font-medium capitalize">
+              {userData?.subscription?.status === "active"
+                ? userData?.subscription?.planId || "Pro"
+                : "Free"}
+            </span>
+          </p>
+
+          <p className="text-gray-500 text-sm mt-2">
+            Provider: {userData?.subscription?.provider?.toUpperCase()}
+          </p>
+
+          {userData?.subscription?.expiresAt && (
+            <p className="text-gray-500 text-sm mt-1">
+              Renews on:{" "}
+              {new Date(userData.subscription.expiresAt).toLocaleDateString()}
+            </p>
+          )}
+
+          <button
+            onClick={handleUpgradePlan}
+            className="mt-5 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            Upgrade Plan
+          </button>
+
+        </div>
+      </>
+    )}
   </div>
-        )}
+)}
+
 
     
         {currentView === 'community' && <Community />}

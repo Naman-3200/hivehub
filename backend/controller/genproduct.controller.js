@@ -4,6 +4,7 @@ import express from "express";
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 import fetch from "node-fetch";
+import { createNotification } from "../utils/notificationService.js";
 
 
 
@@ -105,6 +106,15 @@ export const addGenProduct = async (req, res) => {
     });
 
     await genProduct.save();
+
+    // Notification: product added
+    await createNotification({
+      ownerId: req.user.id,
+      type: 'inventory',
+      message: `🛍️ Product "${genProduct.name}" has been added to your store.`,
+      icon: '🛍️',
+      meta: { productId: genProduct._id }
+    });
 
     res.status(201).json({ message: "Product saved successfully", product: genProduct });
   } catch (err) {

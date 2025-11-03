@@ -3,6 +3,7 @@ import WebProduct from "../model/webproduct.model.js";
 import fetch from "node-fetch";
 import axios from "axios";
 import StoreProduct from "../model/product.model.js";
+import { createNotification } from "../utils/notificationService.js";
 
 
 
@@ -30,7 +31,7 @@ export const toggleStoreStatus = async (req, res) => {
       return res.status(403).json({ message: "Cannot disable superadmin's store" });
     }
 
-    store.isDisabled = disable;
+    store.disabled = disable;
     await store.save();
 
     res.status(200).json({
@@ -457,8 +458,6 @@ async function addDomainToVercel(domain) {
 }
 
 export const editStore = async (req, res) => {
- 
-
 
 try {
     const { storeId } = req.params;
@@ -539,6 +538,15 @@ export const createStore = async (req, res) => {
 
     const newStore = new Store({ name, domain, ownerId });
     await newStore.save();
+
+     // Notification
+    await createNotification({
+      ownerId,
+      type: 'store',
+      message: `🎉 Your store "${newStore.name}" has been created successfully!`,
+      icon: '🏪',
+      meta: { storeId: newStore._id }
+    });
 
     res.status(201).json({ success: true, store: newStore });
   } catch (error) {
