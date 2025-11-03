@@ -327,7 +327,7 @@ export const googleAuthSuccess = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
-    const frontendURL = process.env.FRONTEND_URL || "https://hivehub-tr8u.vercel.app/";
+    const frontendURL = process.env.FRONTEND_URL || "https://hivehub-tr8u.vercel.app";
     res.redirect(`${frontendURL}/auth-success?token=${token}`);
     
   } catch (error) {

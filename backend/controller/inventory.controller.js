@@ -6,6 +6,7 @@ import Store from "../model/store.model.js";
 import StoreProduct from "../model/product.model.js";
 import WebProduct from "../model/webproduct.model.js";
 import User from "../model/user.model.js";
+import { createNotification } from "../utils/notificationService.js";
 
 
 function bufferToStream(buffer) {
@@ -152,162 +153,21 @@ export const createInventory = async (req, res) => {
       }
     }
 
+
+    await createNotification({
+      ownerId,
+      type: 'inventory',
+      message: `✅ Your product "${item.name}" has been published and is live!`,
+      icon: '🎯',
+      meta: { productId: item._id }
+    });
+
     return res.status(201).json({ success: true, item });
   } catch (e) {
     console.error("❌ createInventory error:", e);
     return res.status(500).json({ message: "Server error" });
   }
 };
-
-
-// POST /api/inventory (multipart/form-data)
-// fields: name, description, sellingPrice, costPrice, category, stock, stores (JSON[]), published
-// export const createInventory = async (req, res) => {
-//   try {
-//     const ownerId = req.user._id || req.user.id;
-
-//     // parse scalar + array fields (multipart -> strings)
-//     const {
-//       name,
-//       description = "",
-//       sellingPrice = 0,
-//       costPrice = 0,
-//       category = "",
-//       stock = 0,
-//       published = false,
-//       stores = "[]",
-//     } = req.body;
-
-//     if (!name) return res.status(400).json({ message: "name is required" });
-
-//     const storeIds = JSON.parse(stores || "[]");
-//     if (!Array.isArray(storeIds)) {
-//       return res.status(400).json({ message: "stores must be an array" });
-//     }
-
-//     const images = [];
-//     const videos = [];
-
-//     if (Array.isArray(req.files)) {
-//       for (const f of req.files) {
-//         const uploaded = await uploadToCloudinary(f.buffer, f.mimetype);
-//         if (f.mimetype.startsWith("video/")) videos.push(uploaded.secure_url);
-//         else images.push(uploaded.secure_url);
-//       }
-//     }
-
-//     // optional: verify store IDs exist
-//     if (storeIds.length) {
-//       const exists = await Store.find({ _id: { $in: storeIds } }).select("_id");
-//       if (exists.length !== storeIds.length) {
-//         return res.status(400).json({ message: "One or more stores not found" });
-//       }
-//     }
-
-//     const item = await InventoryItem.create({
-//       name,
-//       description,
-//       sellingPrice: Number(sellingPrice),
-//       costPrice: Number(costPrice),
-//       category,
-//       stock: Number(stock),
-//       published: published === true || published === "true",
-//       stores: storeIds,
-//       images,
-//       videos,
-//       ownerId,
-//     });
-
-//     res.status(201).json({ success: true, item });
-//   } catch (e) {
-//     console.error("createInventory error:", e);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
-
-// export const createInventory = async (req, res) => {
-//   try {
-//     const ownerId = req.user._id || req.user.id;
-
-//     const {
-//       name,
-//       description = "",
-//       sellingPrice = 0,
-//       costPrice = 0,
-//       category = "",
-//       stock = 0,
-//       published = false,
-//       stores = "[]",
-//     } = req.body;
-
-//     if (!name) return res.status(400).json({ message: "Name is required" });
-
-//     const storeIds = JSON.parse(stores || "[]");
-//     if (!Array.isArray(storeIds)) {
-//       return res.status(400).json({ message: "stores must be an array" });
-//     }
-
-//     // upload media
-//     const images = [];
-//     const videos = [];
-//     if (Array.isArray(req.files)) {
-//       for (const f of req.files) {
-//         const uploaded = await uploadToCloudinary(f.buffer, f.mimetype);
-//         if (f.mimetype.startsWith("video/")) videos.push(uploaded.secure_url);
-//         else images.push(uploaded.secure_url);
-//       }
-//     }
-
-//     // create the master inventory product
-//     const item = await InventoryItem.create({
-//       name,
-//       description,
-//       sellingPrice: Number(sellingPrice),
-//       costPrice: Number(costPrice),
-//       category,
-//       stock: Number(stock),
-//       published: published === true || published === "true",
-//       stores: storeIds,
-//       images,
-//       videos,
-//       ownerId,
-//     });
-
-//     // ✅ Sync to each store’s live products if published
-//     if (item.published && storeIds.length > 0) {
-//       console.log(`📦 Syncing published item '${item.name}' to ${storeIds.length} store(s)...`);
-
-//       for (const storeId of storeIds) {
-//         await StoreProduct.findOneAndUpdate(
-//           { productId: item._id.toString(), storeId },
-//           {
-//             userId: ownerId,
-//             productId: item._id.toString(),
-//             name: item.name,
-//             image: item.images[0] || null,
-//             price: item.sellingPrice,
-//             sellingPrice: item.sellingPrice,
-//             category: item.category,
-//             quantity: item.stock,
-//             storeId,
-//             published: true,
-//           },
-//           { upsert: true, new: true }
-//         );
-//       }
-
-//       console.log("✅ Product synced to all stores successfully.");
-//     }
-
-//     res.status(201).json({ success: true, item });
-//   } catch (e) {
-//     console.error("❌ createInventory error:", e);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
-
 
 
 

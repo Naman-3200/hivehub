@@ -2,6 +2,8 @@ import Order from "../model/order.model.js";
 import Store from "../model/store.model.js";
 import Product from "../model/product.model.js";
 import { v4 as uuidv4 } from 'uuid'; 
+import { createNotification } from "../utils/notificationService.js";
+
 
 
 // export const createOrder = async (req, res) => {
@@ -95,6 +97,15 @@ export const createOrder = async (req, res) => {
       store.totalOrders += 1;
       await store.save();
     }
+
+    // Notify the store owner
+    await createNotification({
+      userId,
+      type: 'order',
+      message: `📦 Order #${newOrder._id} has been received!`,
+      icon: '📦',
+      meta: { orderId: newOrder._id, storeId }
+    });
 
     return res.status(201).json({
       message: "Order created successfully",
