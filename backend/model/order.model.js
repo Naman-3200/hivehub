@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 const orderSchema = new mongoose.Schema(
   {
     orderId: { type: String, required: true, unique: true },
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // admin/owner user (who owns store)
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: false }, // admin/owner user (who owns store)
     storeId: { type: mongoose.Schema.Types.ObjectId, ref: "Store", required: true },
 
     // NEW: consumer (store visitor) – optional, used for store-side user management

@@ -62,12 +62,17 @@ export const createWhopCheckout = async (req, res) => {
     // Use a sensible default redirect if frontend doesn't send one
     const successRedirect = redirectUrl || "https://whop.com";
 
+    const safeRedirect =
+      redirectUrl?.startsWith("https://")
+        ? redirectUrl
+        : "https://whop.com"; // fallback safe URL
+
     // Create Checkout Session (returns purchase_url)
     const { data } = await axios.post(
       "https://api.whop.com/api/v2/checkout_sessions",
       {
         plan_id: planId,            // e.g. "plan_yPQVhpq4nBFtU"
-        redirect_url: successRedirect
+        redirect_url: safeRedirect
       },
       {
         headers: {
