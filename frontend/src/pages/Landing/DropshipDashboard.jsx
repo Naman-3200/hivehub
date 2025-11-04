@@ -550,74 +550,74 @@ const publishProduct = async (item) => {
 
 
 
-// const generateWithAI = async (field, currentValue, nameValue) => {
-//   try {
-//     if (field === "name") {
-//       // Generate product name
-//       const res = await fetch("https://api.openai.com/v1/chat/completions", {
-//         method: "POST",
-//         headers: {
-//           "Authorization": `Bearer ${"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"}`, // 🔑 use env var
-//           "Content-Type": "application/json",
-//         },
-//         body: JSON.stringify({
-//           model: "gpt-4o-mini",
-//           messages: [
-//             { role: "system", content: "You are a product generator." },
-//             { role: "user", content: `Suggest a unique product name related to ${nameValue}.` }
-//           ],
-//         }),
-//       });
-//       const data = await res.json();
-//       console.log("Generated name data:", data);
-//       return data.choices[0].message.content.trim();
-//     }
+const generateWithAI = async (field, currentValue, nameValue) => {
+  try {
+    if (field === "name") {
+      // Generate product name
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${"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"}`, // 🔑 use env var
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            { role: "system", content: "You are a product generator." },
+            { role: "user", content: `Suggest a unique product name related to ${nameValue}.` }
+          ],
+        }),
+      });
+      const data = await res.json();
+      console.log("Generated name data:", data);
+      return data.choices[0].message.content.trim();
+    }
 
-//     if (field === "category") {
-//       // Description should be based on the generated name
-//       const res = await fetch("https://api.openai.com/v1/chat/completions", {
-//         method: "POST",
-//         headers: {
-//           "Authorization": `Bearer ${"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"}`,
-//           "Content-Type": "application/json",
-//         },
-//         body: JSON.stringify({
-//           model: "gpt-4o-mini",
-//           messages: [
-//             { role: "system", content: "You are a creative product copywriter." },
-//             { role: "user", content: `Write a short marketing description for the product called "${nameValue}". Can also mention special features.` }
-//           ],
-//         }),
-//       });
-//       const data = await res.json();
-//       return data.choices[0].message.content.trim();
-//     }
+    if (field === "category") {
+      // Description should be based on the generated name
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${"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"}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            { role: "system", content: "You are a creative product copywriter." },
+            { role: "user", content: `Write a short marketing description for the product called "${nameValue}". Can also mention special features.` }
+          ],
+        }),
+      });
+      const data = await res.json();
+      return data.choices[0].message.content.trim();
+    }
 
-//     if (field === "image") {
-//       // Generate an image for the product name
-//       const res = await fetch("https://api.openai.com/v1/images/generations", {
-//         method: "POST",
-//         headers: {
-//           "Authorization": `Bearer ${"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"}`,
-//           "Content-Type": "application/json",
-//         },
-//         body: JSON.stringify({
-//           model: "gpt-image-1",
-//           prompt: `High quality product image for ${nameValue}, professional e-commerce style, white background`,
-//           size: "1024x1024",
-//         }),
-//       });
-//       const data = await res.json();
-//       console.log("Generated image data:", data);
-//       return data.data[0].url;
-//     }
+    if (field === "image") {
+      // Generate an image for the product name
+      const res = await fetch("https://api.openai.com/v1/images/generations", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${"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"}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-image-1",
+          prompt: `High quality product image for ${nameValue}, professional e-commerce style, white background`,
+          size: "1024x1024",
+        }),
+      });
+      const data = await res.json();
+      console.log("Generated image data:", data);
+      return data.data[0].url;
+    }
 
-//     return currentValue;
-//   } catch (err) {
-//     console.error("AI generation failed", err);
-//     return currentValue;
-//   }
-// };
+    return currentValue;
+  } catch (err) {
+    console.error("AI generation failed", err);
+    return currentValue;
+  }
+};
 
 
 //     const createLocalWebsite = (store) => {
@@ -854,15 +854,6 @@ const openStoreWebsite = async (storeIdOrObj) => {
   //   totalProducts: myProducts.filter(item => item.published).length,
   //   storeViews: selectedStore ? 1247 : 0
   // };
-
-  const generateWithAI = async (field, currentValue, nameValue) => {
-    try {
-      const result = "await generateProductFieldWithAI(field, currentValue, nameValue); " 
-      return result;
-    } catch (err) {
-      console.error("AI generation failed", err);
-      return currentValue;
-    }
 
 
 
