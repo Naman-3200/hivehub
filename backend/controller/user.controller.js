@@ -19,6 +19,7 @@ export const register = async (req, res) => {
   }
 
   try {
+    
     const { name, email, password } = req.body;
 
     const existingUser = await User.findOne({ email });
@@ -61,7 +62,13 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    console.log("Login body:", req.body);
+
+    
+
+
+    // const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select("+password"); 
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -73,6 +80,18 @@ export const login = async (req, res) => {
         needsVerification: true,
       });
     }
+
+    console.log("User record from DB:", user);
+console.log("Stored password hash:", user.password);
+
+
+
+    if (!user.password) {
+  return res.status(400).json({
+    message: "This account doesn't have a password. Please log in using Google or reset your password.",
+  });
+}
+
 
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {

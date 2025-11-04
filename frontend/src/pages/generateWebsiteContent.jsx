@@ -1,7 +1,7 @@
 import { getStoreBlocks } from "./storeTemplateBlocks.jsx";
 
 export const generateWebsiteContent = (store, publishedProducts) => {
-  const { heroSection, productsGrid, footerSection } = getStoreBlocks(store, publishedProducts);
+  const { heroSection, productsGrid, footerSection, cartModal, authModal, headerSection, scriptSection } = getStoreBlocks(store, publishedProducts);
 
   return `
   <!DOCTYPE html>
@@ -16,9 +16,15 @@ export const generateWebsiteContent = (store, publishedProducts) => {
     </style>
   </head>
   <body class="bg-gray-50">
-    ${heroSection}
-    ${productsGrid}
-    ${footerSection}
+${headerSection}
+${heroSection}
+${productsGrid}
+${authModal}
+${cartModal}
+${footerSection}
+${scriptSection}
+    
+
   </body>
   </html>`;
 };
