@@ -557,7 +557,7 @@ const generateWithAI = async (field, currentValue, nameValue) => {
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${"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"}`, // 🔑 use env var
+          "Authorization": `Bearer ${"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"}`, // 🔑 use env var
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -578,7 +578,7 @@ const generateWithAI = async (field, currentValue, nameValue) => {
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${"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"}`,
+          "Authorization": `Bearer ${"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"}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
