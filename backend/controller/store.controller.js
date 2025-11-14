@@ -371,10 +371,10 @@ export const getStoreWebsiteHTML = async (req, res) => {
     if (!store) return res.status(404).send("Store not found");
 
     // ✅ If you already have saved HTML
-    if (store.websiteHtml && store.websiteHtml.trim().length > 0) {
-      res.set("Content-Type", "text/html");
-      return res.status(200).send(store.websiteHtml);
-    }
+    // if (store.websiteHtml && store.websiteHtml.trim().length > 0) {
+    //   res.set("Content-Type", "text/html");
+    //   return res.status(200).send(store.websiteHtml);
+    // }
 
     // ✅ FIXED: fetch from StoreProduct instead of WebProduct
     // Try WebProduct first, fallback to StoreProduct if empty

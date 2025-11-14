@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import { authenticateToken } from "./middleware/auth.middleware.js"; 
 dotenv.config();
 
-const Port = process.env.PORT || 8000;
+const Port = process.env.PORT || 8088;
 
 console.log("🚀 SERVER STARTING...");
 console.log("🔍 NODE_ENV:", process.env.NODE_ENV);

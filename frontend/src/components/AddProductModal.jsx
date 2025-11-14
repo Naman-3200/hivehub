@@ -34,6 +34,8 @@ const AddProductModal = ({
   const [csvFile, setCsvFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState(productMode || "manual");
+  const [selectedStores, setSelectedStores] = useState([]);
+
 
   // AI products state (GenProducts)
   const [genProducts, setGenProducts] = useState([]);
@@ -68,8 +70,64 @@ const AddProductModal = ({
 
   
 
-  const handleManualSubmit = async () => {
+//   const handleManualSubmit = async () => {
+//   try {
+//     const formData = new FormData();
+//     formData.append("name", manualData.name);
+//     formData.append("description", manualData.description);
+//     formData.append("category", manualData.category);
+//     formData.append("originalPrice", manualData.costPrice);
+//     formData.append("sellingPrice", manualData.price);
+//     formData.append("potentialProfit", manualData.profit);
+
+//     // append multiple images
+//     manualData.images.forEach((file) => {
+//       formData.append("images", file);
+//     });
+
+//     const res = await fetch("https://hivehub-1.onrender.com/api/add-gen-products", {
+//       method: "POST",
+//       headers: {
+//         Authorization: `Bearer ${token}`, // ✅ send token if required
+//       },
+//       body: formData,
+//     });
+
+//     if (!res.ok) {
+//       throw new Error("Failed to save manual product");
+//     }
+
+//     const data = await res.json();
+
+
+//     if (onAddGenProduct) {
+//       onAddGenProduct(data.product || data);
+//     }
+
+
+//     console.log("✅ Manual product saved:", data);
+
+//     onClose()
+//   } catch (err) {
+//     console.error("❌ Error saving manual product:", err);
+//   }
+// };
+
+
+  // Fetch when modal mounts and when mode changes to ai
+ 
+ const handleManualSubmit = async () => {
   try {
+    if (!manualData.name || !manualData.price) {
+      alert("Please fill all required fields.");
+      return;
+    }
+
+    if (!selectedStores.length) {
+      alert("Please select at least one store.");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("name", manualData.name);
     formData.append("description", manualData.description);
@@ -78,41 +136,43 @@ const AddProductModal = ({
     formData.append("sellingPrice", manualData.price);
     formData.append("potentialProfit", manualData.profit);
 
-    // append multiple images
-    manualData.images.forEach((file) => {
-      formData.append("images", file);
+    // Add multiple stores
+    selectedStores.forEach((storeId) => {
+      formData.append("stores[]", storeId);
     });
+
+    // Add multiple images
+    if (manualData.images && manualData.images.length > 0) {
+      manualData.images.forEach((file) => {
+        formData.append("images", file);
+      });
+    }
 
     const res = await fetch("https://hivehub-1.onrender.com/api/add-gen-products", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`, // ✅ send token if required
+        Authorization: `Bearer ${token}`,
       },
       body: formData,
     });
 
-    if (!res.ok) {
-      throw new Error("Failed to save manual product");
-    }
+    if (!res.ok) throw new Error("Failed to save manual product");
 
     const data = await res.json();
-
 
     if (onAddGenProduct) {
       onAddGenProduct(data.product || data);
     }
 
-
     console.log("✅ Manual product saved:", data);
-
-    onClose()
+    onClose();
   } catch (err) {
     console.error("❌ Error saving manual product:", err);
   }
 };
 
-
-  // Fetch when modal mounts and when mode changes to ai
+ 
+ 
   useEffect(() => {
     fetchGenProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -239,73 +299,150 @@ const AddProductModal = ({
     }
   };
 
-  const handleSubmit = async () => {
-    setLoading(true);
-    try {
-      if (isEditing) {
-        // Edit product
-        await addOrUpdateProductAPI(manualData);
-      } else {
-        if (mode === "manual" ) {
-          await addOrUpdateProductAPI(manualData);
-        } 
-        else if (mode === "ai"){
-          await generateProduct();
-        }
-        else if (mode === "csv") {
-          if (!csvFile) {
-            alert("Please upload a CSV file first.");
-            setLoading(false);
-            return;
-          }
-          Papa.parse(csvFile, {
-            header: true,
-            skipEmptyLines: true,
-            complete: async (results) => {
-              const bulkProducts = results.data.map((row) => ({
-                name: row.name || "Unnamed Product",
-                description: row.description || "No description",
-                price: parseFloat(row.price) || 0,
-                image: row.image || "https://via.placeholder.com/300x300",
-                category: row.category || "General",
-                productId: row.productId || Date.now().toString()
-              }));
+  // const handleSubmit = async () => {
+  //   setLoading(true);
+  //   try {
+  //     if (isEditing) {
+  //       // Edit product
+  //       await addOrUpdateProductAPI(manualData);
+  //     } else {
+  //       if (mode === "manual" ) {
+  //         await addOrUpdateProductAPI(manualData);
+  //       } 
+  //       else if (mode === "ai"){
+  //         await generateProduct();
+  //       }
+  //       else if (mode === "csv") {
+  //         if (!csvFile) {
+  //           alert("Please upload a CSV file first.");
+  //           setLoading(false);
+  //           return;
+  //         }
+  //         Papa.parse(csvFile, {
+  //           header: true,
+  //           skipEmptyLines: true,
+  //           complete: async (results) => {
+  //             const bulkProducts = results.data.map((row) => ({
+  //               name: row.name || "Unnamed Product",
+  //               description: row.description || "No description",
+  //               price: parseFloat(row.price) || 0,
+  //               image: row.image || "https://via.placeholder.com/300x300",
+  //               category: row.category || "General",
+  //               productId: row.productId || Date.now().toString()
+  //             }));
 
-              await fetch(`${"https://hivehub-1.onrender.com"}/api/my-products/bulk`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  ...(token ? { Authorization: `Bearer ${token}` } : {})
-                },
-                body: JSON.stringify({
-                  products: bulkProducts,
-                  storeId: selectedStore?._id || selectedStore?.id || null
-                })
-              });
+  //             await fetch(`${"https://hivehub-1.onrender.com"}/api/my-products/bulk`, {
+  //               method: "POST",
+  //               headers: {
+  //                 "Content-Type": "application/json",
+  //                 ...(token ? { Authorization: `Bearer ${token}` } : {})
+  //               },
+  //               body: JSON.stringify({
+  //                 products: bulkProducts,
+  //                 storeId: selectedStore?._id || selectedStore?.id || null
+  //               })
+  //             });
 
-              fetchMyProducts();
-              onClose();
-            },
-            error: (err) => {
-              console.error("CSV parse error:", err);
-              alert("Failed to parse CSV file");
-            }
-          });
-        }
-      }
+  //             fetchMyProducts();
+  //             onClose();
+  //           },
+  //           error: (err) => {
+  //             console.error("CSV parse error:", err);
+  //             alert("Failed to parse CSV file");
+  //           }
+  //         });
+  //       }
+  //     }
 
-      // Refresh and close
-      await fetchMyProducts();
-      onClose();
-    } catch (err) {
-      console.error("Error on submit:", err);
-      alert("Error saving product");
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     // Refresh and close
+  //     await fetchMyProducts();
+  //     onClose();
+  //   } catch (err) {
+  //     console.error("Error on submit:", err);
+  //     alert("Error saving product");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   // When adding a generated product into inventory, map fields expected by addToInventory
+  
+  
+const handleSubmit = async () => {
+  setLoading(true);
+  try {
+    if (isEditing) {
+      // Edit product
+      await addOrUpdateProductAPI(manualData);
+    } else {
+      if (mode === "manual") {
+        await addOrUpdateProductAPI(manualData);
+      } 
+
+      else if (mode === "ai") {
+        await generateProduct();
+      } 
+
+      else if (mode === "csv") {
+        if (!csvFile) {
+          alert("Please upload a CSV file first.");
+          setLoading(false);
+          return;
+        }
+
+        Papa.parse(csvFile, {
+          header: true,
+          skipEmptyLines: true,
+          complete: async (results) => {
+            const bulkProducts = results.data.map((row) => ({
+              name: row.name || "Unnamed Product",
+              description: row.description || "No description",
+              price: parseFloat(row.price) || 0,
+              image: row.image || "https://via.placeholder.com/300x300",
+              category: row.category || "General",
+              productId: row.productId || Date.now().toString(),
+            }));
+
+            // 🟦 CSV also supports multi-store
+            const storePayload = selectedStores.length > 0 
+              ? selectedStores 
+              : [selectedStore?._id || selectedStore?.id];
+
+            await fetch(`${"https://hivehub-1.onrender.com"}/api/my-products/bulk`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
+              body: JSON.stringify({
+                products: bulkProducts,
+                stores: storePayload,
+              }),
+            });
+
+            fetchMyProducts();
+            onClose();
+          },
+          error: (err) => {
+            console.error("CSV parse error:", err);
+            alert("Failed to parse CSV file");
+          },
+        });
+      }
+    }
+
+    await fetchMyProducts();
+    onClose();
+  } catch (err) {
+    console.error("Error on submit:", err);
+    alert("Error saving product");
+  } finally {
+    setLoading(false);
+  }
+};
+
+  
+  
   const handleAddGenToInventory = async (p) => {
     const payload = {
       productId: p._id || p.productId || Date.now().toString(),
