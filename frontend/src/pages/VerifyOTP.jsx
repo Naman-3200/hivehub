@@ -71,7 +71,7 @@ export default function VerifyOTP() {
         localStorage.setItem("role", response.data.user.role);
 
         // Show success message
-        alert("✅ Email verified successfully! Welcome to HiveHub!");
+        alert("✅ Email verified successfully! Welcome to HiveeHub!");
         navigate("/");
       }
     } catch (error) {

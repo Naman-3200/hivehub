@@ -3,11 +3,14 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import InventoryForm from "./InventoryForm";
 import ProductDetailsModal from "./ProductDetailsModal";
+import EditInventoryModal from "./EditInventoryModal";
 
 export default function InventoryList() {
   const token = localStorage.getItem("token");
   const [items, setItems] = useState([]);
   const [active, setActive] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
+
 
   const load = async () => {
     const res = await axios.get("https://hivehub-1.onrender.com/api/inventory", {
@@ -48,20 +51,32 @@ export default function InventoryList() {
                   <td className="p-2">₹{Number(it.sellingPrice || 0).toLocaleString()}</td>
                   <td className="p-2">{(it.stores || []).length}</td>
                   <td className="p-2">{(it.images?.length || 0) + (it.videos?.length || 0)}</td>
-                  <td className="p-2">
-                    <button
-                      className="px-3 py-1 rounded bg-gray-800 text-white"
-                      onClick={async () => {
-                        // ensure we fetch populated stores for modal
-                        const r = await axios.get(`https://hivehub-1.onrender.com/api/inventory/${it._id}`, {
-                          headers: { Authorization: `Bearer ${token}` },
-                        });
-                        setActive(r.data.item);
-                      }}
-                    >
-                      View
-                    </button>
+                  <td className="p-2 space-x-2">
+                <button
+                  className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
+                  onClick={async () => {
+                    const r = await axios.get(`https://hivehub-1.onrender.com/api/inventory/${it._id}`, {
+                      headers: { Authorization: `Bearer ${token}` },
+                    });
+                    setActive(r.data.item); // For "View"
+                  }}
+                >
+                  View
+                </button>
+
+                <button
+                  className="px-3 py-1 rounded bg-yellow-500 text-white hover:bg-yellow-600"
+                  onClick={async () => {
+                    const r = await axios.get(`https://hivehub-1.onrender.com/api/inventory/${it._id}`, {
+                      headers: { Authorization: `Bearer ${token}` },
+                    });
+                    setEditingItem(r.data.item);
+                  }}
+                >
+                  Edit
+                </button>
                   </td>
+
                 </tr>
               ))}
               {items.length === 0 && (
@@ -77,6 +92,18 @@ export default function InventoryList() {
       </div>
 
       {active && <ProductDetailsModal item={active} onClose={() => setActive(null)} />}
+        {editingItem && (
+  <EditInventoryModal
+    item={editingItem}
+    onClose={() => setEditingItem(null)}
+    onUpdated={(updated) => {
+      setItems((prev) =>
+        prev.map((p) => (p._id === updated._id ? updated : p))
+      );
+    }}
+  />
+)}
+
     </div>
   );
 }

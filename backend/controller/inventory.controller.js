@@ -229,36 +229,80 @@ export const updateInventory = async (req, res) => {
     if (!updated) return res.status(404).json({ message: "Not found" });
 
     // After updating inventory item successfully:
+// if (updated.published && updated.stores?.length > 0) {
+//   console.log(`🔄 Syncing updated item '${updated.name}' to stores...`);
+//   for (const storeId of updated.stores) {
+//     await StoreProduct.findOneAndUpdate(
+//       { productId: updated._id.toString(), storeId },
+//       {
+//         userId: updated.ownerId,
+//         productId: updated._id.toString(),
+//         name: updated.name,
+//         image: updated.images[0] || null,
+//         price: updated.sellingPrice,
+//         sellingPrice: updated.sellingPrice,
+//         category: updated.category,
+//         quantity: updated.stock,
+//         storeId,
+//         published: updated.published,
+//       },
+//       { upsert: true, new: true }
+//     );
+//   }
+//   console.log("✅ Store products synced successfully after update.");
+// }
+
 if (updated.published && updated.stores?.length > 0) {
   console.log(`🔄 Syncing updated item '${updated.name}' to stores...`);
+
+  const baseDoc = {
+    userId: updated.ownerId,
+    productId: updated._id.toString(),
+    name: updated.name,
+    description: updated.description,
+    price: updated.costPrice || 0,
+    sellingPrice: updated.sellingPrice || 0,
+    image: updated.images?.[0] || "",
+    category: updated.category,
+    quantity: updated.stock,
+    published: updated.published,
+  };
+
   for (const storeId of updated.stores) {
+    // ✅ Update StoreProduct
     await StoreProduct.findOneAndUpdate(
       { productId: updated._id.toString(), storeId },
-      {
-        userId: updated.ownerId,
-        productId: updated._id.toString(),
-        name: updated.name,
-        image: updated.images[0] || null,
-        price: updated.sellingPrice,
-        sellingPrice: updated.sellingPrice,
-        category: updated.category,
-        quantity: updated.stock,
-        storeId,
-        published: updated.published,
-      },
+      { ...baseDoc, storeId },
+      { upsert: true, new: true }
+    );
+
+    // ✅ Update WebProduct (THIS WAS MISSING)
+    await WebProduct.findOneAndUpdate(
+      { productId: updated._id.toString(), storeId },
+      { ...baseDoc, storeId },
       { upsert: true, new: true }
     );
   }
-  console.log("✅ Store products synced successfully after update.");
+
+  console.log("✅ Store + WebProduct synced successfully after update.");
 }
+
+
 
 if (!updated.published) {
   await StoreProduct.updateMany(
     { productId: updated._id.toString() },
     { published: false }
   );
-  console.log("🚫 Product unpublished from all stores");
+
+  await WebProduct.updateMany(
+    { productId: updated._id.toString() },
+    { published: false }
+  );
+
+  console.log("🚫 Product unpublished from all stores (StoreProduct + WebProduct)");
 }
+
 
 
     res.json({ success: true, item: updated });
