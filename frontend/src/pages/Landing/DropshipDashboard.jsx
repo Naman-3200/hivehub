@@ -1771,6 +1771,10 @@ return (
         />
       )}
 
+      {currentView === "settings" && (
+        (<SuperAdminDashboard/> && <SuperAdminUsers/>)
+      )}
+
       {/* Notifications */}
       {currentView === "notifications" && (
         <NotificationsPage
@@ -1855,6 +1859,8 @@ import CreateStorePage from '../CreateStorePage.jsx';
 import Navbar from './DashboardNavbar.jsx';
 import ProductsPage from '../ProductsPage.jsx';
 import InventoryPage from '../Inventory/InventoryPage.jsx';
+import SuperAdminDashboard from '../SuperAdmin/SuperAdminDashboard.jsx';
+import SuperAdminUsers from '../SuperAdmin/SuperAdminUsers.jsx';
 const InventoryRow = ({ item, onUpdate, onPublish, generateWithAI, onDelete }) => {
   console.log("inventory item", item);
 
