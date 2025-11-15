@@ -1720,16 +1720,16 @@ return (
         />
       )}
 
-      {/* Create Store */}
-      {currentView === "create-store" && (
+      {/* {currentView === "create-store" && (
         <CreateStorePage
           newStore={newStore}
           setNewStore={setNewStore}
           storeCategories={storeCategories}
           createStore={createStore}
-          navigate={navigate}
+          setCurrentView={setCurrentView}
         />
-      )}
+      )} */}
+
 
       {/* Products */}
       {currentView === "products" && (
@@ -1755,6 +1755,17 @@ return (
         />
       )}
 
+      {currentView === "create-store" && (
+      <CreateStorePage
+        newStore={newStore}
+        setNewStore={setNewStore}
+        storeCategories={storeCategories}
+        createStore={createStore}
+        setCurrentView={setCurrentView}   
+      />
+    )}
+
+
       {/* Inventory */}
       {currentView === "inventory" && (
         <InventoryPage
@@ -1771,9 +1782,18 @@ return (
         />
       )}
 
-      {currentView === "settings" && (
-        (<SuperAdminDashboard/> && <SuperAdminUsers/>)
+      {/* {currentView === "superadmin-users" && (
+         <SuperAdminDashboard /> &&
+         <SuperAdminUsers />
+      )} */}
+
+      {currentView === "superadmin-users" && (
+        <>
+          <SuperAdminUsers />
+          <SuperAdminDashboard />
+        </>
       )}
+
 
       {/* Notifications */}
       {currentView === "notifications" && (

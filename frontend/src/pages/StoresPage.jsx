@@ -30,8 +30,8 @@ const StoresPage = ({
         </div>
 
         <button
-        //   onClick={() => setCurrentView("create-store")}
-        onClick={() => navigate("/create-store")}
+          onClick={() => setCurrentView("create-store")}
+        // onClick={() => navigate("/create-store")}
 
           className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-500 text-white px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-100 transition-all"
         >

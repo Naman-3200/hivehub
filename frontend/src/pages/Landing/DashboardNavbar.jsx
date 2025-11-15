@@ -27,6 +27,8 @@ export default function DashboardNavbar({ setCurrentView }) {
     superadmin: [
       { name: "Dashboard", view: "dashboard", icon: Home },
       { name: "Manage Users/Stores", view: "superadmin-users", icon: Users },
+      { name: "Stores", view: "stores", icon: Store },
+      { name: "Products", view: "products", icon: Package },
       { name: "Inventory", view: "inventory", icon: ClipboardList },
       { name: "Community", view: "community", icon: Globe },
       { name: "Settings", view: "settings", icon: SettingsIcon },
@@ -35,6 +37,8 @@ export default function DashboardNavbar({ setCurrentView }) {
 
     admin: [
       { name: "Dashboard", view: "dashboard", icon: Home },
+      { name: "Stores", view: "stores", icon: Store },
+      { name: "Products", view: "products", icon: Package },
       { name: "Store Users", view: "store-users", icon: Users },
       { name: "Inventory", view: "inventory", icon: ClipboardList },
       { name: "Community", view: "community", icon: Globe },
@@ -43,7 +47,7 @@ export default function DashboardNavbar({ setCurrentView }) {
     ],
 
     user: [
-      { name: "Dashboard", view: "dashboard", icon: Home },
+      // { name: "Dashboard", view: "dashboard", icon: Home },
       { name: "Stores", view: "stores", icon: Store },
       { name: "Products", view: "products", icon: Package },
       { name: "Inventory", view: "inventory", icon: ClipboardList },
@@ -59,7 +63,7 @@ export default function DashboardNavbar({ setCurrentView }) {
     <div className="sticky top-0 z-50 bg-white border-b shadow-sm">
       {/* Announcement bar */}
       <div className="bg-violet-500 py-1 text-center text-white text-sm">
-        🚀 Build beautiful stores with <span className="font-semibold">Hiveehub</span>
+        🚀 Build beautiful stores with <span className="font-semibold">Trendsy.ai</span>
       </div>
 
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -68,7 +72,7 @@ export default function DashboardNavbar({ setCurrentView }) {
           onClick={() => setCurrentView("dashboard")}
           className="text-2xl font-bold text-gray-900 cursor-pointer"
         >
-          Hiveehub
+          Trendsy.ai
         </h1>
 
         {/* Desktop Menu */}

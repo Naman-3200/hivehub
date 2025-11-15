@@ -162,7 +162,7 @@ return (
         }
       />
 
-      <Route
+      {/* <Route
         path="/create-store"
         element={
           <ProtectedRoute>
@@ -170,7 +170,7 @@ return (
             />
           </ProtectedRoute>
         }
-      />
+      /> */}
 
 
       <Route
