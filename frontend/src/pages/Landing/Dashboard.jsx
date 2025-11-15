@@ -249,7 +249,7 @@ return (
         </h1>
 
         {/* Filters */}
-        <div className="flex flex-wrap items-center gap-4 bg-white/80 backdrop-blur-sm border border-gray-200 p-6 rounded-2xl shadow-md hover:shadow-lg transition-shadow mb-10">
+        {/* <div className="flex flex-wrap items-center gap-4 bg-white/80 backdrop-blur-sm border border-gray-200 p-6 rounded-2xl shadow-md hover:shadow-lg transition-shadow mb-10">
           <label className="text-gray-700 font-medium">Store:</label>
           <select
             name="storeId"
@@ -290,7 +290,90 @@ return (
           >
             {loading ? "Loading..." : "Apply Filters"}
           </button>
-        </div>
+        </div> */}
+
+        <div className="flex flex-wrap items-center gap-4 bg-white/80 backdrop-blur-sm border border-gray-200 p-6 rounded-2xl shadow-md hover:shadow-lg transition-shadow mb-10">
+
+  <label className="text-gray-700 font-medium">Store:</label>
+  <select
+    name="storeId"
+    value={filters.storeId}
+    onChange={handleFilterChange}
+    className="border-gray-300 rounded-xl p-2 px-3 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all bg-white"
+  >
+    <option value="">All Stores</option>
+    {stores.map((store) => (
+      <option key={store._id} value={store._id}>
+        {store.name}
+      </option>
+    ))}
+  </select>
+
+  <label className="text-gray-700 font-medium">Start Date:</label>
+  <input
+    type="date"
+    name="start"
+    value={filters.start}
+    max={new Date().toISOString().split("T")[0]} // ⛔ No future dates
+    onChange={(e) => {
+      const selected = e.target.value;
+      const today = new Date().toISOString().split("T")[0];
+
+      // Prevent future dates
+      if (selected > today) {
+        alert("Start date cannot be in the future.");
+        return;
+      }
+
+      // Prevent start > end
+      if (filters.end && selected > filters.end) {
+        alert("Start date cannot be after end date.");
+        return;
+      }
+
+      handleFilterChange(e);
+    }}
+    className="border-gray-300 rounded-xl p-2 px-3 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all bg-white"
+  />
+
+  <label className="text-gray-700 font-medium">End Date:</label>
+  <input
+    type="date"
+    name="end"
+    value={filters.end}
+    max={new Date().toISOString().split("T")[0]} // ⛔ No future dates
+    min={filters.start || ""} // ⛔ Cannot be before start date
+    onChange={(e) => {
+      const selected = e.target.value;
+      const today = new Date().toISOString().split("T")[0];
+
+      // Prevent future dates
+      if (selected > today) {
+        alert("End date cannot be in the future.");
+        return;
+      }
+
+      // Prevent end < start
+      if (filters.start && selected < filters.start) {
+        alert("End date cannot be before start date.");
+        return;
+      }
+
+      handleFilterChange(e);
+    }}
+    className="border-gray-300 rounded-xl p-2 px-3 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all bg-white"
+  />
+
+  <button
+    onClick={fetchKPIs}
+    className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-xl font-medium shadow-md hover:shadow-lg hover:scale-105 transform transition-all duration-200 disabled:opacity-60"
+    disabled={loading}
+  >
+    {loading ? "Loading..." : "Apply Filters"}
+  </button>
+
+</div>
+
 
         {/* KPI Metrics */}
         {metrics ? (
