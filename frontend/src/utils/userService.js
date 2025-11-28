@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8000/api/users";
+const API_URL = "https://hivehub-1.onrender.com/api/users";
 
 export const getUserProfile = async (token) => {
   const res = await fetch(`${API_URL}/profile`, {

@@ -85,8 +85,8 @@ router.get("/callback", async (req, res) => {
     await hiveStore.save();
 
     // Redirect to frontend success page
-    // e.g. http://localhost:5173/shopify-connected?shop=...&storeId=...
-    const frontendUrl = `http://localhost:5173/shopify-connected?shop=${encodeURIComponent(
+    // e.g. https://hivehub-tr8u.vercel.app/shopify-connected?shop=...&storeId=...
+    const frontendUrl = `https://hivehub-tr8u.vercel.app/shopify-connected?shop=${encodeURIComponent(
       shop
     )}&storeId=${hiveStoreId}`;
     return res.redirect(frontendUrl);

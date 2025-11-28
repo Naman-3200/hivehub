@@ -13,7 +13,7 @@ export default function InventoryList() {
 
 
   const load = async () => {
-    const res = await axios.get("http://localhost:8000/api/inventory", {
+    const res = await axios.get("https://hivehub-1.onrender.com/api/inventory", {
       headers: { Authorization: `Bearer ${token}` },
     });
     // You can implement GET /api/inventory (list) similarly; if not, fetch from your existing list endpoint
@@ -55,7 +55,7 @@ export default function InventoryList() {
                 <button
                   className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
                   onClick={async () => {
-                    const r = await axios.get(`http://localhost:8000/api/inventory/${it._id}`, {
+                    const r = await axios.get(`https://hivehub-1.onrender.com/api/inventory/${it._id}`, {
                       headers: { Authorization: `Bearer ${token}` },
                     });
                     setActive(r.data.item); // For "View"
@@ -67,7 +67,7 @@ export default function InventoryList() {
                 <button
                   className="px-3 py-1 rounded bg-yellow-500 text-white hover:bg-yellow-600"
                   onClick={async () => {
-                    const r = await axios.get(`http://localhost:8000/api/inventory/${it._id}`, {
+                    const r = await axios.get(`https://hivehub-1.onrender.com/api/inventory/${it._id}`, {
                       headers: { Authorization: `Bearer ${token}` },
                     });
                     setEditingItem(r.data.item);

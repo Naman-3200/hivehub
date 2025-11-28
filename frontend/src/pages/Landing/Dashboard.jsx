@@ -32,7 +32,7 @@ const Dashboard = () => {
   // ✅ Fetch store list
   const fetchStores = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/stores", {
+      const res = await axios.get("https://hivehub-1.onrender.com/api/stores", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = res.data;
@@ -54,7 +54,7 @@ const Dashboard = () => {
       if (filters.end) params.end = filters.end;
       if (filters.storeId) params.storeId = filters.storeId;
 
-      const res = await axios.get("http://localhost:8000/api/dashboard/kpis", {
+      const res = await axios.get("https://hivehub-1.onrender.com/api/dashboard/kpis", {
         headers: { Authorization: `Bearer ${token}` },
         params,
       });
@@ -520,7 +520,7 @@ export default Dashboard;
 //   const fetchStores = async () => {
 //     try {
 //       const token = localStorage.getItem("token");
-//       const response = await axios.get("http://localhost:8000/api/stores", {
+//       const response = await axios.get("https://hivehub-1.onrender.com/api/stores", {
 //         headers: { Authorization: `Bearer ${token}` },
 //       });
 //       console.log("Fetched stores:", response.data);
@@ -536,8 +536,8 @@ export default Dashboard;
 //     try {
 //       const token = localStorage.getItem("token");
 //       const url = storeId
-//         ? `http://localhost:8000/api/dashboard/kpis?storeId=${storeId}`
-//         : "http://localhost:8000/api/dashboard/kpis";
+//         ? `https://hivehub-1.onrender.com/api/dashboard/kpis?storeId=${storeId}`
+//         : "https://hivehub-1.onrender.com/api/dashboard/kpis";
 
 //       const response = await axios.get(url, {
 //         headers: { Authorization: `Bearer ${token}` },

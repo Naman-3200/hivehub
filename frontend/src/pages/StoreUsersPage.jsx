@@ -11,7 +11,7 @@ const StoreUsersPage = ({ storeId }) => {
   const [orders, setOrders] = useState([]);
 
   const fetchUsers = async () => {
-    const res = await axios.get("http://localhost:8000/api/store-users/manage", {
+    const res = await axios.get("https://hivehub-1.onrender.com/api/store-users/manage", {
       headers: { Authorization: `Bearer ${token}` },
       params: { storeId, range }
     });
@@ -20,7 +20,7 @@ const StoreUsersPage = ({ storeId }) => {
   };
 
   const fetchProfile = async (storeUserId) => {
-    const res = await axios.get(`http://localhost:8000/api/store-users/manage/${storeUserId}`, {
+    const res = await axios.get(`https://hivehub-1.onrender.com/api/store-users/manage/${storeUserId}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     setProfile(res.data.profile);
@@ -28,7 +28,7 @@ const StoreUsersPage = ({ storeId }) => {
   };
 
   const block = async (id, blocked) => {
-    await axios.patch(`http://localhost:8000/api/store-users/manage/${id}/block`, { blocked }, {
+    await axios.patch(`https://hivehub-1.onrender.com/api/store-users/manage/${id}/block`, { blocked }, {
       headers: { Authorization: `Bearer ${token}` }
     });
     fetchUsers();
@@ -37,7 +37,7 @@ const StoreUsersPage = ({ storeId }) => {
 
   const remove = async (id) => {
     if (!confirm("Delete this user?")) return;
-    await axios.delete(`http://localhost:8000/api/store-users/manage/${id}`, {
+    await axios.delete(`https://hivehub-1.onrender.com/api/store-users/manage/${id}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     setSelected(null);

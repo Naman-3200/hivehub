@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8000/api/notifications";
+const API_URL = "https://hivehub-1.onrender.com/api/notifications";
 
 export const getNotifications = async (userId) => {
   const res = await fetch(`${API_URL}/${userId}`);

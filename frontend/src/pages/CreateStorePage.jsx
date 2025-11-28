@@ -40,12 +40,12 @@
 //         category: newStore.category,
 //         description: newStore.description || "",
 //         domain: `${domainSlug}-${uniqueId}.hivehub.store`,
-//         url: `http://localhost:5173/store/${domainSlug}-${uniqueId}`,
+//         url: `https://hivehub-tr8u.vercel.app/store/${domainSlug}-${uniqueId}`,
 //       };
 
 //       console.log("Sending store payload:", payload);
 
-//       const res = await fetch("http://localhost:8000/api/stores", {
+//       const res = await fetch("https://hivehub-1.onrender.com/api/stores", {
 //         method: "POST",
 //         headers: {
 //           "Content-Type": "application/json",
@@ -85,7 +85,7 @@
 //       }
 
 //       const res = await fetch(
-//         `http://localhost:8000/auth/shopify/install?shop=${shopifyDomain}&hiveStoreId=${createdStoreId}`
+//         `https://hivehub-1.onrender.com/auth/shopify/install?shop=${shopifyDomain}&hiveStoreId=${createdStoreId}`
 //       );
 
 //       const data = await res.json();
@@ -276,10 +276,10 @@ const CreateStorePage = ({
         category: newStore.category,
         description: newStore.description || "",
         domain: `${domainSlug}-${uniqueId}.hivehub.store`,
-        url: `http://localhost:5173/store/${domainSlug}-${uniqueId}`,
+        url: `https://hivehub-tr8u.vercel.app/store/${domainSlug}-${uniqueId}`,
       };
 
-      const res = await fetch("http://localhost:8000/api/stores", {
+      const res = await fetch("https://hivehub-1.onrender.com/api/stores", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -316,7 +316,7 @@ const CreateStorePage = ({
       }
 
       const res = await fetch(
-        `http://localhost:8000/auth/shopify/install?shop=${shopifyDomain}&hiveStoreId=${createdStoreId}`
+        `https://hivehub-1.onrender.com/auth/shopify/install?shop=${shopifyDomain}&hiveStoreId=${createdStoreId}`
       );
 
       const data = await res.json();

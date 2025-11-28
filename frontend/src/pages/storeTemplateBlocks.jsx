@@ -128,7 +128,7 @@
 
 //     let currentMode = "login";
 
-//     const API_BASE = "http://localhost:8000/api/store-users"; // 🔁 Replace with your backend domain
+//     const API_BASE = "https://hivehub-1.onrender.com/api/store-users"; // 🔁 Replace with your backend domain
 
 //     function openModal(mode) {
 //       currentMode = mode;
@@ -268,7 +268,7 @@
 //   const authModalScript = `
 //     <script>
 //       const storeId = "${store._id}";
-//       const API_BASE = "http://localhost:8000/api/store-users";
+//       const API_BASE = "https://hivehub-1.onrender.com/api/store-users";
 
 //       const modal = document.getElementById("authModal");
 //       const modalTitle = document.getElementById("modalTitle");
@@ -491,8 +491,8 @@
 //   const scriptSection = `
 //   <script>
 //     const storeId = "${store._id}";
-//     const API_BASE = "http://localhost:8000/api/store-users";
-//     const WHOP_CHECKOUT_API = "http://localhost:8000/api/payments/create-whop-session"; // ✅ your existing backend
+//     const API_BASE = "https://hivehub-1.onrender.com/api/store-users";
+//     const WHOP_CHECKOUT_API = "https://hivehub-1.onrender.com/api/payments/create-whop-session"; // ✅ your existing backend
 
 //     // ========== AUTH LOGIC ==========
 //     const modal = document.getElementById("authModal");
@@ -762,8 +762,8 @@
 //   const scriptSection = `
 //   <script>
 //     const storeId = "${store._id}";
-//     const API_BASE = "http://localhost:8000/api/store-users";
-//     const WHOP_CHECKOUT_API = "http://localhost:8000/api/whop/checkout";
+//     const API_BASE = "https://hivehub-1.onrender.com/api/store-users";
+//     const WHOP_CHECKOUT_API = "https://hivehub-1.onrender.com/api/whop/checkout";
 
 //     // === AUTH LOGIC ===
 //     const modal = document.getElementById("authModal");
@@ -1085,7 +1085,7 @@ export const getStoreBlocks = (store, publishedProducts) => {
   const scriptSection = `
   <script>
     const storeId = "${store._id}";
-    const API_BASE = "http://localhost:8000/api";
+    const API_BASE = "https://hivehub-1.onrender.com/api";
     const USERS_API = API_BASE + "/store-users";
     const WHOP_CHECKOUT_API = API_BASE + "/whop/checkout";
     const ORDERS_API = API_BASE + "/orders";

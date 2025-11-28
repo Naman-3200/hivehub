@@ -21,7 +21,7 @@ const Community = () => {
 
   const fetchUser = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/user/me");
+      const res = await axios.get("https://hivehub-1.onrender.com/user/me");
       setUser(res.data);
       fetchPosts();
     } catch (err) {
@@ -33,7 +33,7 @@ const Community = () => {
 
   const fetchPosts = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/community");
+      const res = await axios.get("https://hivehub-1.onrender.com/api/community");
       setPosts(res.data);
     } catch (err) {
       console.error("Error fetching posts:", err);
@@ -48,7 +48,7 @@ const Community = () => {
       formData.append("visibility", visibility); // ✅ Added visibility
       if (image) formData.append("image", image);
 
-      await axios.post("http://localhost:8000/api/community", formData, {
+      await axios.post("https://hivehub-1.onrender.com/api/community", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -63,12 +63,12 @@ const Community = () => {
   };
 
   const handleLike = async (postId) => {
-    await axios.post("http://localhost:8000/api/community/like", { postId });
+    await axios.post("https://hivehub-1.onrender.com/api/community/like", { postId });
     fetchPosts();
   };
 
   const handleComment = async (postId, commentText) => {
-    await axios.post("http://localhost:8000/api/community/comment", {
+    await axios.post("https://hivehub-1.onrender.com/api/community/comment", {
       postId,
       commentText,
     });

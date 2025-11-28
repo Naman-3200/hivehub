@@ -158,7 +158,7 @@ const StoresPage = ({
                       const newDomain = prompt("Enter your custom domain:", current);
 
                       if (newDomain) {
-                        fetch(`http://localhost:8000/api/stores/${store?._id}/domain`, {
+                        fetch(`https://hivehub-1.onrender.com/api/stores/${store?._id}/domain`, {
                           method: "PUT",
                           headers: {
                             "Content-Type": "application/json",

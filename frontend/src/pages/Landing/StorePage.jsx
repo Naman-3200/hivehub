@@ -20,7 +20,7 @@
 
 //   console.log("store %%%%%%%%%%%%%",storeData);
 
-//   const API_BASE = "http://localhost:8000/api/store-users";
+//   const API_BASE = "https://hivehub-1.onrender.com/api/store-users";
 
 
   
@@ -28,7 +28,7 @@
 //   useEffect(() => {
 //     const fetchStoreData = async () => {
 //       try {
-//         const res = await fetch(`http://localhost:8000/api/stores/slug/${slug}`);
+//         const res = await fetch(`https://hivehub-1.onrender.com/api/stores/slug/${slug}`);
 //         const data = await res.json();
 //         setStoreData(data);
       
@@ -56,7 +56,7 @@
 //   //   }
 
 //   //   try {
-//   //     const res = await fetch("http://localhost:8000/api/orders/create", {
+//   //     const res = await fetch("https://hivehub-1.onrender.com/api/orders/create", {
 //   //       method: "POST",
 //   //       headers: {
 //   //         "Content-Type": "application/json",
@@ -129,7 +129,7 @@
 //         total,
 //       };
 
-//       const res = await fetch("http://localhost:8000/api/orders/create", {
+//       const res = await fetch("https://hivehub-1.onrender.com/api/orders/create", {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json" },
 //         body: JSON.stringify(orderData),
@@ -513,13 +513,13 @@
 // //     password: "",
 // //   });
 
-// //   const API_BASE = "http://localhost:8000/api/store-users";
-// //   const ORDER_API = "http://localhost:8000/api/orders"; // 🧾 backend endpoint to create order
+// //   const API_BASE = "https://hivehub-1.onrender.com/api/store-users";
+// //   const ORDER_API = "https://hivehub-1.onrender.com/api/orders"; // 🧾 backend endpoint to create order
 
 // //   useEffect(() => {
 // //     const fetchStoreData = async () => {
 // //       try {
-// //         const res = await fetch(`http://localhost:8000/api/stores/slug/${slug}`);
+// //         const res = await fetch(`https://hivehub-1.onrender.com/api/stores/slug/${slug}`);
 // //         const data = await res.json();
 // //         setStoreData(data);
 // //         setPublishedProducts(data.publishedProducts || []);
@@ -643,7 +643,7 @@
 // //         console.log("Order created:", data);
 
 // //         // Optional KPI trigger
-// //         await fetch("http://localhost:8000/api/kpis/update-orders", {
+// //         await fetch("https://hivehub-1.onrender.com/api/kpis/update-orders", {
 // //           method: "POST",
 // //           headers: { "Content-Type": "application/json" },
 // //           body: JSON.stringify({
@@ -828,12 +828,12 @@ const StorePage = () => {
   const [authMode, setAuthMode] = useState("login");
   const [authData, setAuthData] = useState({ name: "", email: "", password: "" });
 
-  const API_BASE = "http://localhost:8000/api/store-users";
+  const API_BASE = "https://hivehub-1.onrender.com/api/store-users";
 
   useEffect(() => {
     const fetchStoreData = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/stores/slug/${slug}`);
+        const res = await fetch(`https://hivehub-1.onrender.com/api/stores/slug/${slug}`);
         const data = await res.json();
         setStoreData(data);
         setPublishedProducts(data.publishedProducts || []);
@@ -922,11 +922,11 @@ const StorePage = () => {
   //       items: cart.map((p) => ({ productId: p.productId, name: p.name, price: p.sellingPrice || p.price })),
   //       totalPrice: total,
   //       storeId: storeData.store?._id || storeData.store?.id,
-  //       redirectUrl: `http://localhost:5173//payment-success`, // where user returns after payment
+  //       redirectUrl: `https://hivehub-tr8u.vercel.app//payment-success`, // where user returns after payment
   //     };
 
   //     const res = await axios.post(
-  //       "http://localhost:8000/api/whop/checkout",
+  //       "https://hivehub-1.onrender.com/api/whop/checkout",
   //       { planId, metadata },
   //       {
   //         headers: { Authorization: `Bearer ${token}` },
@@ -936,7 +936,7 @@ const StorePage = () => {
   //     // const { purchaseUrl } = res.data;
   //     // redirect user to payment
   //     // window.location.href = purchaseUrl;
-  //         const redirectUrl = encodeURIComponent("http://localhost:5173//payment-success");
+  //         const redirectUrl = encodeURIComponent("https://hivehub-tr8u.vercel.app//payment-success");
 
   //     window.location.href = `https://whop.com/checkout/${planId}?redirect_url=${redirectUrl}`;
   //   } catch (err) {

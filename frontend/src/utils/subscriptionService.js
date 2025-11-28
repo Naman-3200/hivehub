@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8000/api/subscription";
+const API_URL = "https://hivehub-1.onrender.com/api/subscription";
 
 export const createWhopCheckout = async (token, planId) => {
   const res = await fetch(`${API_URL}/checkout`, {
