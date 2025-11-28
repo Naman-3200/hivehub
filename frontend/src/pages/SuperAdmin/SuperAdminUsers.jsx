@@ -8,8 +8,8 @@
 
 //   const load = async () => {
 //     const [u, s] = await Promise.all([
-//       axios.get("https://hivehub-1.onrender.com/api/admin/users", { headers: { Authorization: `Bearer ${token}` } }),
-//       axios.get("https://hivehub-1.onrender.com/api/admin/stores", { headers: { Authorization: `Bearer ${token}` } }),
+//       axios.get("http://localhost:8000/api/admin/users", { headers: { Authorization: `Bearer ${token}` } }),
+//       axios.get("http://localhost:8000/api/admin/stores", { headers: { Authorization: `Bearer ${token}` } }),
 //     ]);
 //     setUsers(u.data || []);
 //     setStores(s.data || []);
@@ -17,12 +17,12 @@
 
 //   const toggleUser = async (userId, disabledd) => {
 //     console.log("User data:", userId);
-//     await axios.patch(`https://hivehub-1.onrender.com/api/admin/users/${userId}/disabled`, { disabledd }, { headers: { Authorization: `Bearer ${token}` } });
+//     await axios.patch(`http://localhost:8000/api/admin/users/${userId}/disabled`, { disabledd }, { headers: { Authorization: `Bearer ${token}` } });
 //     load();
 //   };
 //   const toggleStore = async (storeId, disabledd) => {
 //     console.log("Stores data:", storeId);
-//     await axios.patch(`https://hivehub-1.onrender.com/api/stores/${storeId}/toggle-status`, { disabledd }, { headers: { Authorization: `Bearer ${token}` } });
+//     await axios.patch(`http://localhost:8000/api/stores/${storeId}/toggle-status`, { disabledd }, { headers: { Authorization: `Bearer ${token}` } });
 //     load();
 //   };
 
@@ -132,10 +132,10 @@ export default function SuperAdminUsers() {
     setLoading(true);
     try {
       const [userRes, storeRes] = await Promise.all([
-        axios.get("https://hivehub-1.onrender.com/api/admin/users", {
+        axios.get("http://localhost:8000/api/admin/users", {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get("https://hivehub-1.onrender.com/api/admin/stores", {
+        axios.get("http://localhost:8000/api/admin/stores", {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -152,7 +152,7 @@ export default function SuperAdminUsers() {
   const toggleUserStatus = async (userId, disabled) => {
     try {
       await axios.patch(
-        `https://hivehub-1.onrender.com/api/admin/users/${userId}/disable`,
+        `http://localhost:8000/api/admin/users/${userId}/disable`,
         { disabled },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -166,7 +166,7 @@ export default function SuperAdminUsers() {
   const toggleStoreStatus = async (storeId, disabled) => {
     try {
       await axios.patch(
-        `https://hivehub-1.onrender.com/api/admin/stores/${storeId}/disable`,
+        `http://localhost:8000/api/admin/stores/${storeId}/disable`,
         { disabled },
         { headers: { Authorization: `Bearer ${token}` } }
       );

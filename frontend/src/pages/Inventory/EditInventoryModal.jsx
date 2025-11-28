@@ -30,7 +30,7 @@ const submit = async () => {
     Object.entries(form).forEach(([k, v]) => fd.append(k, v));
     files.forEach((f) => fd.append("media", f));
 
-    const res = await axios.put(`https://hivehub-1.onrender.com/api/inventory/${item._id}`, fd, {
+    const res = await axios.put(`http://localhost:8000/api/inventory/${item._id}`, fd, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "multipart/form-data",
@@ -48,7 +48,7 @@ if (res.data.item?.stores?.length) {
   for (const sid of res.data.item.stores) {
     try {
       // 1️⃣ Fetch updated WebProducts for this store
-      const resp = await fetch(`https://hivehub-1.onrender.com/api/web-products/${sid}`, {
+      const resp = await fetch(`http://localhost:8000/api/web-products/${sid}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await resp.json();

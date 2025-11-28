@@ -1,237 +1,224 @@
-// import React from "react";
+// import React, { useState } from "react";
+// import DEFAULT_CATEGORIES from "../pages/storeCategories.jsx";
 
 // const CreateStorePage = ({
 //   newStore,
 //   setNewStore,
 //   storeCategories,
-//   createStore,
-//   navigate
+//   setCurrentView,
 // }) => {
+//   const token = localStorage.getItem("token");
+
+//   const [showShopifyConnect, setShowShopifyConnect] = useState(false);
+//   const [createdStoreId, setCreatedStoreId] = useState(null);
+//   const [shopifyDomain, setShopifyDomain] = useState("");
+
+//   const categories =
+//     Array.isArray(storeCategories) && storeCategories.length > 0
+//       ? storeCategories
+//       : DEFAULT_CATEGORIES;
+
+//   // -------------------------------
+//   // CREATE STORE FUNCTION
+//   // -------------------------------
+//   const handleCreateStore = async () => {
+//     try {
+//       if (!newStore?.name || !newStore?.category) {
+//         alert("Please enter store name & select a category");
+//         return;
+//       }
+
+//       const domainSlug = newStore.name
+//         .toLowerCase()
+//         .replace(/\s+/g, "-")
+//         .replace(/[^a-z0-9-]/g, "");
+
+//       const uniqueId = Date.now();
+
+//       const payload = {
+//         name: newStore.name,
+//         category: newStore.category,
+//         description: newStore.description || "",
+//         domain: `${domainSlug}-${uniqueId}.hivehub.store`,
+//         url: `http://localhost:5173/store/${domainSlug}-${uniqueId}`,
+//       };
+
+//       console.log("Sending store payload:", payload);
+
+//       const res = await fetch("http://localhost:8000/api/stores", {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${token}`,
+//         },
+//         body: JSON.stringify(payload),
+//       });
+
+//       const data = await res.json();
+
+//       if (!res.ok) {
+//         alert(data.message || "Failed to create store");
+//         return;
+//       }
+
+//       // SHOW SHOPIFY POPUP
+//       setCreatedStoreId(data.store._id);
+//       setShowShopifyConnect(true);
+
+//       // Reset
+//       setNewStore({ name: "", category: "", description: "" });
+
+//     } catch (error) {
+//       console.error("Store creation failed:", error);
+//       alert("Something went wrong while creating the store.");
+//     }
+//   };
+
+//   // -------------------------------
+//   // CONNECT SHOPIFY
+//   // -------------------------------
+//   const connectShopify = async () => {
+//     try {
+//       if (!shopifyDomain) {
+//         alert("Enter your Shopify domain first");
+//         return;
+//       }
+
+//       const res = await fetch(
+//         `http://localhost:8000/auth/shopify/install?shop=${shopifyDomain}&hiveStoreId=${createdStoreId}`
+//       );
+
+//       const data = await res.json();
+//       window.location.href = data.installUrl; // Redirect to Shopify
+//     } catch (error) {
+//       console.error("Shopify connect failed:", error);
+//       alert("Failed to connect Shopify.");
+//     }
+//   };
+
 //   return (
-//     <div className="max-w-3xl sm:max-w-4xl mx-auto py-10">
-//       {/* Header */}
-//       <div className="mb-10 sm:mb-12 text-center">
-//         <h1 className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent">
+//     <div className="max-w-3xl mx-auto py-10">
+
+//       <div className="mb-10 text-center">
+//         <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent">
 //           Create a New Store
 //         </h1>
-//         <p className="text-slate-600 text-base sm:text-lg">
-//           Set up your online store in just a few elegant steps
-//         </p>
+//         <p className="text-slate-600 text-lg">Set up your online store</p>
 //       </div>
 
-//       {/* Create Store Card */}
-//       <div className="bg-white/80 backdrop-blur-md p-8 sm:p-10 rounded-3xl shadow-2xl border border-slate-200">
-//         <div className="space-y-8 sm:space-y-10">
-          
-//           {/* Store Name */}
+//       <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-200">
+//         <div className="space-y-8">
+
 //           <div>
-//             <label className="block text-sm font-medium text-slate-700 mb-2">
-//               Store Name
-//             </label>
+//             <label className="block text-sm font-medium mb-2">Store Name</label>
 //             <input
 //               type="text"
-//               value={newStore?.name || ""}
+//               value={newStore?.name}
 //               onChange={(e) =>
 //                 setNewStore({ ...newStore, name: e.target.value })
 //               }
-//               placeholder="Enter your store name"
-//               className="w-full px-4 py-3 border border-slate-300 rounded-lg 
-//                          focus:outline-none focus:ring-2 focus:ring-indigo-500"
+//               placeholder="Enter store name"
+//               className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500"
 //             />
 //           </div>
 
-//           {/* Categories */}
 //           <div>
-//             <label className="block text-sm font-medium text-slate-700 mb-3">
-//               What do you want to sell?
+//             <label className="block text-sm font-medium mb-3">
+//               Select Category
 //             </label>
 
-//             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-//               {(storeCategories || []).map((category) => (
+//             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+//               {categories.map((cat) => (
 //                 <button
+//                   key={cat.id}
 //                   type="button"
-//                   key={category.id}
 //                   onClick={() =>
-//                     setNewStore({ ...newStore, category: category.id })
+//                     setNewStore({ ...newStore, category: cat.id })
 //                   }
-//                   className={`p-5 sm:p-6 rounded-xl text-center border transition-all transform 
-//                     hover:scale-[1.02] ${
-//                       newStore?.category === category.id
-//                         ? "border-indigo-500 bg-indigo-50 text-indigo-700 shadow-md"
-//                         : "border-slate-200 hover:border-indigo-300 hover:shadow-sm"
-//                     }`}
-//                 >
-//                   <div className="text-2xl sm:text-3xl mb-2">{category.icon}</div>
-//                   <div className="text-sm font-medium">{category.name}</div>
-//                 </button>
-//               ))}
-//             </div>
-//           </div>
-
-//           {/* Buttons */}
-//           <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-4 pt-2">
-//             <button
-//               type="button"
-//               onClick={() => navigate("/stores")}
-//               className="px-6 py-2 border border-slate-300 rounded-lg 
-//                          text-slate-700 hover:bg-slate-50 transition"
-//             >
-//               Cancel
-//             </button>
-
-//             <button
-//               type="button"
-//               onClick={createStore}
-//               disabled={!newStore?.name || !newStore?.category}
-//               className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-500 
-//                          text-white rounded-lg shadow-lg hover:shadow-xl hover:scale-[1.01]
-//                          disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-//             >
-//               Generate Website
-//             </button>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default CreateStorePage;
-
-
-
-
-
-
-
-// // src/pages/CreateStorePage.jsx
-// import React, { useState, useEffect } from "react";
-// import DEFAULT_CATEGORIES from "../pages/storeCategories.jsx"; // adjust path
-
-// const CreateStorePage = ({
-//   newStore: newStoreProp,
-//   setNewStore: setNewStoreProp,
-//   storeCategories: storeCategoriesProp,
-//   createStore: createStoreProp,
-//   setCurrentView,
-//   navigate,
-// }) => {
-//   // fallback local state if parent didn't provide setter
-//   const [localNewStore, setLocalNewStore] = useState({
-//     name: "",
-//     category: "",
-//     description: "",
-//   });
-
-//   // final categories used (prop > default)
-//   const categories = (Array.isArray(storeCategoriesProp) && storeCategoriesProp.length > 0)
-//     ? storeCategoriesProp
-//     : DEFAULT_CATEGORIES;
-
-//   useEffect(() => {
-//     console.log("CreateStorePage categories (prop vs default):", {
-//       fromProp: storeCategoriesProp,
-//       used: categories,
-//     });
-//   }, [storeCategoriesProp]); // eslint-disable-line
-
-//   // controlled state fallback logic
-//   useEffect(() => {
-//     if (newStoreProp && !setNewStoreProp) {
-//       setLocalNewStore((prev) => ({ ...prev, ...newStoreProp }));
-//     }
-//   }, [newStoreProp, setNewStoreProp]);
-
-//   const newStore = newStoreProp ?? localNewStore;
-//   const setNewStore = typeof setNewStoreProp === "function" ? setNewStoreProp : setLocalNewStore;
-
-//   // createStore wrapper: prefer parent's createStore if present
-//   const handleCreateStore = async () => {
-//     if (typeof createStoreProp === "function") {
-//       await createStoreProp();
-//       return;
-//     }
-//     // fallback local behaviour (no backend)
-//     const payload = { ...newStore, id: Date.now() };
-//     alert("Store created locally (no backend). Name: " + (payload.name || "<empty>"));
-//     if (!setNewStoreProp) setLocalNewStore({ name: "", category: "", description: "" });
-//     if (typeof setCurrentView === "function") setCurrentView("stores");
-//     else if (typeof navigate === "function") navigate("/stores");
-//   };
-
-//   const handleNameChange = (e) => setNewStore({ ...newStore, name: e.target.value });
-//   const handleCategorySelect = (categoryId) => setNewStore({ ...newStore, category: categoryId });
-//   const handleCancel = () => {
-//     if (typeof setCurrentView === "function") setCurrentView("stores");
-//     else if (typeof navigate === "function") navigate("/stores");
-//   };
-
-//   return (
-//     <div className="max-w-3xl sm:max-w-4xl mx-auto py-10">
-//       <div className="mb-10 sm:mb-12 text-center">
-//         <h1 className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent">
-//           Create a New Store
-//         </h1>
-//         <p className="text-slate-600 text-base sm:text-lg">
-//           Set up your online store in just a few elegant steps
-//         </p>
-//       </div>
-
-//       <div className="bg-white/80 backdrop-blur-md p-8 sm:p-10 rounded-3xl shadow-2xl border border-slate-200">
-//         <div className="space-y-8 sm:space-y-10">
-//           <div>
-//             <label className="block text-sm font-medium text-slate-700 mb-2">Store Name</label>
-//             <input
-//               type="text"
-//               value={newStore?.name || ""}
-//               onChange={handleNameChange}
-//               placeholder="Enter your store name"
-//               className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-//             />
-//           </div>
-
-//           <div>
-//             <label className="block text-sm font-medium text-slate-700 mb-3">What do you want to sell?</label>
-
-//             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-//               {categories.map((category) => (
-//                 <button
-//                   key={category.id}
-//                   type="button"
-//                   onClick={() => handleCategorySelect(category.id)}
-//                   className={`p-5 sm:p-6 rounded-xl text-center border transition-all transform hover:scale-[1.02] ${
-//                     newStore?.category === category.id
+//                   className={`p-6 border rounded-xl transition-all ${
+//                     newStore?.category === cat.id
 //                       ? "border-indigo-500 bg-indigo-50 text-indigo-700 shadow-md"
 //                       : "border-slate-200 hover:border-indigo-300 hover:shadow-sm"
 //                   }`}
 //                 >
-//                   <div className="text-2xl sm:text-3xl mb-2">{category.icon}</div>
-//                   <div className="text-sm font-medium">{category.name}</div>
+//                   <div className="text-3xl">{cat.icon}</div>
+//                   <div className="text-sm mt-2 font-medium">{cat.name}</div>
 //                 </button>
 //               ))}
 //             </div>
 //           </div>
 
-//           <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-4 pt-2">
+//           <div className="flex justify-between pt-2">
 //             <button
-//               type="button"
-//               onClick={handleCancel}
-//               className="px-6 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition"
+//               onClick={() => setCurrentView("stores")}
+//               className="px-6 py-2 border rounded-lg hover:bg-gray-100"
 //             >
 //               Cancel
 //             </button>
 
 //             <button
-//               type="button"
 //               onClick={handleCreateStore}
 //               disabled={!newStore?.name || !newStore?.category}
-//               className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-500 text-white rounded-lg shadow-lg hover:shadow-xl hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+//               className="px-6 py-3 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 disabled:opacity-50"
 //             >
 //               Generate Website
 //             </button>
 //           </div>
+
 //         </div>
 //       </div>
+
+//       {/* ============================ */}
+//       {/* SHOPIFY CONNECT MODAL        */}
+//       {/* ============================ */}
+//       {showShopifyConnect && (
+//         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+//           <div className="bg-white rounded-xl p-8 max-w-md w-full shadow-xl">
+//             <h2 className="text-2xl font-bold mb-4">Connect Shopify Store</h2>
+//             <p className="mb-3 text-gray-600">
+//               Enter your Shopify store domain to provision your store automatically.
+//             </p>
+
+//             <input
+//               type="text"
+//               placeholder="mystore.myshopify.com"
+//               className="w-full border p-3 rounded-lg mb-4"
+//               onChange={(e) => setShopifyDomain(e.target.value)}
+//               value={shopifyDomain}
+//             />
+
+//             <button
+//                 onClick={() => window.location.href = "https://accounts.shopify.com/store-login"}
+//                 className="btn-primary"
+//               >
+//                 Login to Shopify
+//               </button>
+
+//               <button
+//                 onClick={() => window.location.href = "https://www.shopify.com/signup"}
+//                 className="btn-secondary"
+//               >
+//                 Create Shopify Store
+//               </button>
+
+
+//             <button
+//               className="bg-black text-white px-6 py-3 rounded-lg w-full"
+//               onClick={connectShopify}
+//             >
+//               Connect Shopify
+//             </button>
+
+//             <button
+//               className="mt-4 text-gray-500 underline w-full"
+//               onClick={() => setShowShopifyConnect(false)}
+//             >
+//               Cancel
+//             </button>
+//           </div>
+//         </div>
+//       )}
+
 //     </div>
 //   );
 // };
@@ -247,9 +234,7 @@
 
 
 
-
-
-import React from "react";
+import React, { useState } from "react";
 import DEFAULT_CATEGORIES from "../pages/storeCategories.jsx";
 
 const CreateStorePage = ({
@@ -260,13 +245,18 @@ const CreateStorePage = ({
 }) => {
   const token = localStorage.getItem("token");
 
-  // FINAL categories array
+  const [showShopifyConnect, setShowShopifyConnect] = useState(false);
+  const [createdStoreId, setCreatedStoreId] = useState(null);
+  const [shopifyDomain, setShopifyDomain] = useState("");
+
   const categories =
     Array.isArray(storeCategories) && storeCategories.length > 0
       ? storeCategories
       : DEFAULT_CATEGORIES;
 
-  // BACKEND STORE CREATE CALL
+  // ----------------------------------------------------------------
+  // CREATE STORE IN HIVEHUB — Step 1
+  // ----------------------------------------------------------------
   const handleCreateStore = async () => {
     try {
       if (!newStore?.name || !newStore?.category) {
@@ -274,23 +264,22 @@ const CreateStorePage = ({
         return;
       }
 
-      // generate domain
       const domainSlug = newStore.name
         .toLowerCase()
         .replace(/\s+/g, "-")
         .replace(/[^a-z0-9-]/g, "");
 
-      const finalDomain = `${domainSlug}-${Date.now()}.hivehub.store`;
+      const uniqueId = Date.now();
 
       const payload = {
         name: newStore.name,
         category: newStore.category,
         description: newStore.description || "",
-        domain: finalDomain,
-        url: `https://hivehub-tr8u.vercel.app/store/${domainSlug}-${Date.now()}`,
+        domain: `${domainSlug}-${uniqueId}.hivehub.store`,
+        url: `http://localhost:5173/store/${domainSlug}-${uniqueId}`,
       };
 
-      const res = await fetch("https://hivehub-1.onrender.com/api/stores", {
+      const res = await fetch("http://localhost:8000/api/stores", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -306,13 +295,9 @@ const CreateStorePage = ({
         return;
       }
 
-      alert("Store created successfully!");
-
-      // reset store
+      setCreatedStoreId(data.store._id);
+      setShowShopifyConnect(true);
       setNewStore({ name: "", category: "", description: "" });
-
-      // back to list
-      setCurrentView("stores");
 
     } catch (error) {
       console.error("Store creation failed:", error);
@@ -320,9 +305,31 @@ const CreateStorePage = ({
     }
   };
 
+  // ----------------------------------------------------------------
+  // STEP 2 — CONNECT SHOPIFY
+  // ----------------------------------------------------------------
+  const connectShopify = async () => {
+    try {
+      if (!shopifyDomain) {
+        alert("Enter your Shopify domain first");
+        return;
+      }
+
+      const res = await fetch(
+        `http://localhost:8000/auth/shopify/install?shop=${shopifyDomain}&hiveStoreId=${createdStoreId}`
+      );
+
+      const data = await res.json();
+      window.location.href = data.installUrl;
+
+    } catch (error) {
+      console.error("Shopify connect failed:", error);
+      alert("Failed to connect Shopify.");
+    }
+  };
+
   return (
     <div className="max-w-3xl mx-auto py-10">
-
       <div className="mb-10 text-center">
         <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent">
           Create a New Store
@@ -330,24 +337,21 @@ const CreateStorePage = ({
         <p className="text-slate-600 text-lg">Set up your online store</p>
       </div>
 
+      {/* Form */}
       <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-200">
         <div className="space-y-8">
 
-          {/* Store Name */}
           <div>
             <label className="block text-sm font-medium mb-2">Store Name</label>
             <input
               type="text"
               value={newStore?.name}
-              onChange={(e) =>
-                setNewStore({ ...newStore, name: e.target.value })
-              }
+              onChange={(e) => setNewStore({ ...newStore, name: e.target.value })}
               placeholder="Enter store name"
               className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
-          {/* Categories */}
           <div>
             <label className="block text-sm font-medium mb-3">Select Category</label>
 
@@ -356,9 +360,7 @@ const CreateStorePage = ({
                 <button
                   key={cat.id}
                   type="button"
-                  onClick={() =>
-                    setNewStore({ ...newStore, category: cat.id })
-                  }
+                  onClick={() => setNewStore({ ...newStore, category: cat.id })}
                   className={`p-6 border rounded-xl transition-all ${
                     newStore?.category === cat.id
                       ? "border-indigo-500 bg-indigo-50 text-indigo-700 shadow-md"
@@ -372,12 +374,8 @@ const CreateStorePage = ({
             </div>
           </div>
 
-          {/* Buttons */}
           <div className="flex justify-between pt-2">
-            <button
-              onClick={() => setCurrentView("stores")}
-              className="px-6 py-2 border rounded-lg hover:bg-gray-100"
-            >
+            <button onClick={() => setCurrentView("stores")} className="px-6 py-2 border rounded-lg hover:bg-gray-100">
               Cancel
             </button>
 
@@ -393,6 +391,60 @@ const CreateStorePage = ({
         </div>
       </div>
 
+      {/* ======================== SHOPIFY MODAL ======================== */}
+      {showShopifyConnect && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 max-w-md w-full shadow-xl">
+            <h2 className="text-2xl font-bold mb-4">Connect Shopify Store</h2>
+
+            <p className="mb-5 text-gray-600">
+              Login or register into Shopify to continue store creation.
+            </p>
+
+            {/* Login/Register buttons */}
+            <div className="flex flex-col gap-3 mb-6">
+              <button
+                onClick={() => window.open("https://accounts.shopify.com/store-login", "_blank")}
+                className="px-6 py-3 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700"
+              >
+                Login to Shopify
+              </button>
+
+              <button
+                onClick={() => window.open("https://www.shopify.com/signup", "_blank")}
+                className="px-6 py-3 border border-indigo-500 text-indigo-600 rounded-lg hover:bg-indigo-50"
+              >
+                Create Shopify Store
+              </button>
+            </div>
+
+            <p className="text-gray-500 mb-2">After login, enter your Shopify store domain:</p>
+
+            <input
+              type="text"
+              placeholder="mystore.myshopify.com"
+              className="w-full border p-3 rounded-lg mb-4"
+              onChange={(e) => setShopifyDomain(e.target.value)}
+              value={shopifyDomain}
+            />
+
+            <button
+              className="bg-black text-white px-6 py-3 rounded-lg w-full hover:bg-gray-900 disabled:opacity-40"
+              disabled={!shopifyDomain}
+              onClick={connectShopify}
+            >
+              Connect Shopify
+            </button>
+
+            <button
+              className="mt-4 text-gray-500 underline w-full"
+              onClick={() => setShowShopifyConnect(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

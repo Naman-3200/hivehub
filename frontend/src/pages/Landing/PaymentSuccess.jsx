@@ -7,7 +7,7 @@ const PaymentSuccess = () => {
     const orderId = new URLSearchParams(window.location.search).get("orderId");
     const token = localStorage.getItem("token");
     if (orderId && token) {
-      axios.post("https://hivehub-1.onrender.com/api/orders/mark-paid", { orderId }, { headers: { Authorization: `Bearer ${token}` }});
+      axios.post("http://localhost:8000/api/orders/mark-paid", { orderId }, { headers: { Authorization: `Bearer ${token}` }});
     }
   }, []);
   return (

@@ -85,7 +85,7 @@ const AddProductModal = ({
 //       formData.append("images", file);
 //     });
 
-//     const res = await fetch("https://hivehub-1.onrender.com/api/add-gen-products", {
+//     const res = await fetch("http://localhost:8000/api/add-gen-products", {
 //       method: "POST",
 //       headers: {
 //         Authorization: `Bearer ${token}`, // ✅ send token if required
@@ -148,7 +148,7 @@ const AddProductModal = ({
       });
     }
 
-    const res = await fetch("https://hivehub-1.onrender.com/api/add-gen-products", {
+    const res = await fetch("http://localhost:8000/api/add-gen-products", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -212,7 +212,7 @@ const AddProductModal = ({
     setAiLoading(true);
     setAiError(null);
     try {
-      const res = await fetch(`${ "https://hivehub-1.onrender.com"}/api/gen-products`, {
+      const res = await fetch(`${ "http://localhost:8000"}/api/gen-products`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -251,8 +251,8 @@ const AddProductModal = ({
   const addOrUpdateProductAPI = async (product, imageFiles) => {
     try {
       const url = isEditing
-        ? `${ "https://hivehub-1.onrender.com"}/api/my-products/${selectedProduct._id || selectedProduct.id}`
-        : `${"https://hivehub-1.onrender.com"}/api/my-products`;
+        ? `${ "http://localhost:8000"}/api/my-products/${selectedProduct._id || selectedProduct.id}`
+        : `${"http://localhost:8000"}/api/my-products`;
       const method = isEditing ? "PUT" : "POST";
 
       // const body = {
@@ -331,7 +331,7 @@ const AddProductModal = ({
   //               productId: row.productId || Date.now().toString()
   //             }));
 
-  //             await fetch(`${"https://hivehub-1.onrender.com"}/api/my-products/bulk`, {
+  //             await fetch(`${"http://localhost:8000"}/api/my-products/bulk`, {
   //               method: "POST",
   //               headers: {
   //                 "Content-Type": "application/json",
@@ -408,7 +408,7 @@ const handleSubmit = async () => {
               ? selectedStores 
               : [selectedStore?._id || selectedStore?.id];
 
-            await fetch(`${"https://hivehub-1.onrender.com"}/api/my-products/bulk`, {
+            await fetch(`${"http://localhost:8000"}/api/my-products/bulk`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",

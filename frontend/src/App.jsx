@@ -30,6 +30,8 @@ import ProductsPage from "./pages/ProductsPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import SettingsPage from "./pages/SettingsPage";
 import CreateStorePage from "./pages/CreateStorePage";
+import ShopifyConnected from "./pages/ShopifyConnected";
+
 
 
 // import { monitorLocalStorage } from "./pages/monitorlocalStorage";
@@ -171,6 +173,10 @@ return (
           </ProtectedRoute>
         }
       /> */}
+
+
+      <Route path="/shopify-connected" element={<ShopifyConnected />} />
+
 
 
       <Route

@@ -137,7 +137,7 @@ const [isEditing, setIsEditing] = useState(false);
   const handleDelete = async (productId, product) => {
     try {
       console.log("product of the product", product)
-      await axios.delete(`https://hivehub-1.onrender.com/api/my-products/${productId}`, {
+      await axios.delete(`http://localhost:8000/api/my-products/${productId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchMyProducts(); // refresh after delete
@@ -156,7 +156,7 @@ const saveStoreToBackend = async (storeData) => {
     }
 
     console.log("Saving store data:", storeData);
-    const res = await fetch("https://hivehub-1.onrender.com/api/stores", {
+    const res = await fetch("http://localhost:8000/api/stores", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -200,7 +200,7 @@ const fetchNotifications = async () => {
 const fetchStores = async () => {
   try {
     if (!token) return;
-    const res = await fetch("https://hivehub-1.onrender.com/api/stores", {
+    const res = await fetch("http://localhost:8000/api/stores", {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!res.ok) throw new Error("Failed to fetch stores");
@@ -218,7 +218,7 @@ const fetchStores = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`https://hivehub-1.onrender.com/api/products?pageNum=${page}&pageSize=${size}`);
+      const res = await fetch(`http://localhost:8000/api/products?pageNum=${page}&pageSize=${size}`);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
       console.log("data", data);
@@ -272,7 +272,7 @@ const refreshStorePreview = async (storeId) => {
   try {
     console.log("🔄 refreshStorePreview for store:", storeId);
 
-    const resp = await fetch(`https://hivehub-1.onrender.com/api/web-products/${storeId}`, {
+    const resp = await fetch(`http://localhost:8000/api/web-products/${storeId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const data = await resp.json();
@@ -310,7 +310,7 @@ const refreshStorePreview = async (storeId) => {
   const fetchMyProducts = async () => {
     if (!token) return;
     try {
-      const res = await fetch("https://hivehub-1.onrender.com/api/my-products", {
+      const res = await fetch("http://localhost:8000/api/my-products", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch My Products");
@@ -377,7 +377,7 @@ const getProductsByCategory = (category) => {
     const storeId = `${newStore.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
 
 
-    return `https://hivehub-tr8u.vercel.app/store/${storeId}`;
+    return `http://localhost:5173/store/${storeId}`;
   };
 
   const createStore = async () => {
@@ -413,7 +413,7 @@ const getProductsByCategory = (category) => {
     }
       console.log("product", product);
       if (token) {
-        const response = await fetch('https://hivehub-1.onrender.com/api/my-products', {
+        const response = await fetch('http://localhost:8000/api/my-products', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -459,7 +459,7 @@ const updateInventoryItem = async (productId, formData) => {
 }
 
     if (token) {
-      const res = await fetch(`https://hivehub-1.onrender.com/api/my-products/update`, {
+      const res = await fetch(`http://localhost:8000/api/my-products/update`, {
         method: "PUT",
         headers: {
           'Authorization': `Bearer ${token}`
@@ -484,7 +484,7 @@ const updateInventoryItem = async (productId, formData) => {
 
 async function regenerateLocalSiteFromServer(storeId) {
   try {
-    const resp = await fetch(`https://hivehub-1.onrender.com/api/stores/${storeId}/html`, {
+    const resp = await fetch(`http://localhost:8000/api/stores/${storeId}/html`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
@@ -529,7 +529,7 @@ const publishProduct = async (item) => {
     }
 
     const productId = item.productId || item.id;
-    const resp = await fetch(`https://hivehub-1.onrender.com/api/publish-to-website/${productId}`, {
+    const resp = await fetch(`http://localhost:8000/api/publish-to-website/${productId}`, {
       method: "PUT",
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -682,7 +682,7 @@ useEffect(() => {
 
    const fetchGenProducts = async () => {
     try {
-      const res = await fetch("https://hivehub-1.onrender.com/api/gen-products");
+      const res = await fetch("http://localhost:8000/api/gen-products");
       const data = await res.json();
     const products = Array.isArray(data) ? data : data.products || [];
 
@@ -938,7 +938,7 @@ const currentProducts = searchQuery ? filteredProducts : getProductsByCategory(a
 //                                 const current = store?.customDomain || '';
 //                                 const newDomain = prompt('Enter your custom domain:', current);
 //                                 if (newDomain) {
-//                                   fetch(`https://hivehub-1.onrender.com/api/stores/${store?._id}/domain`, {
+//                                   fetch(`http://localhost:8000/api/stores/${store?._id}/domain`, {
 //                                     method: 'PUT',
 //                                     headers: {
 //                                       'Content-Type': 'application/json',

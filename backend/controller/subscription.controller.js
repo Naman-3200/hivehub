@@ -20,7 +20,7 @@ export const createWhopCheckout = async (req, res) => {
       {
         plan_id: planId, // 👈 correct key
         redirect_url: "https://whop.com",
-        cancel_url: "https://hivehub-tr8u.vercel.app/dashboard?cancelled=true",
+        cancel_url: "http://localhost:5173/dashboard?cancelled=true",
         metadata: {
           userId: userId.toString(),
           email: user.email,

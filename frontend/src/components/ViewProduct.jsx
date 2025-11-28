@@ -24,7 +24,7 @@ const ViewProduct = ({ product, onClose, fetchMyProducts, selectedStore, token, 
 //     }
 //       console.log("product", product);
 //       if (token) {
-//         const response = await fetch(`https://hivehub-1.onrender.com/api/inventory`, {
+//         const response = await fetch(`http://localhost:8000/api/inventory`, {
 //           method: 'POST',
 //           headers: {
 //             'Authorization': `Bearer ${token}`,
@@ -107,7 +107,7 @@ const ViewProduct = ({ product, onClose, fetchMyProducts, selectedStore, token, 
     }
 
     // ✅ Send to backend
-    const res = await fetch(`https://hivehub-1.onrender.com/api/inventory`, {
+    const res = await fetch(`http://localhost:8000/api/inventory`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,

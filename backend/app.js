@@ -1,102 +1,3 @@
-// import dotenv from "dotenv";
-// dotenv.config();
-// import express from "express";
-// import cors from "cors";
-// import cookieParser from "cookie-parser";
-// import session from "express-session";
-// import passport from "./config/passport.js";
-
-// // Routes
-// import userRoutes from "./routes/user.route.js";
-// import productRoutes from "./routes/productRoutes.js";
-// import authRoutes from "./routes/auth.route.js";
-// import storeRoutes from "./routes/store.route.js";
-// import genProductRoutes from "./routes/genproduct.route.js";
-// import path from "path";
-// import Store from "./model/store.model.js";
-
-// const app = express();
-
-// app.use(
-//   cors({
-//     origin: "*",
-//     credentials: true,
-//   })
-// );
-
-// app.use(express.json());
-// app.use(express.urlencoded({ extended: true, limit: "32KB" }));
-// app.use(express.static("public"));
-// app.use(cookieParser());
-
-// // if session is used (can be removes if only depend on jwt token)
-// // app.use(
-// //   session({
-// //     secret: "your-secret-key",
-// //     resave: false,
-// //     saveUninitialized: true,
-// //     cookie: {
-// //       secure: false,
-// //       maxAge: 24 * 60 * 60 * 1000,
-// //     },
-// //   })
-// // );
-
-// app.use(passport.initialize());
-// // app.use(passport.session());
-
-// app.use("/api", apiRouter);
-
-
-// // Handle custom domain routing
-// app.use(async (req, res, next) => {
-//   const host = req.headers.host; // e.g. `mycoolshop.com`
-//   // Request is likely HTTP(s) host header without port
-//   const store = await Store.findOne({ customDomain: host, domainVerified: true });
-//   if (store) {
-//     // Serve the frontend index (React build)
-//     return res.sendFile(path.resolve("./client/build/index.html"));
-//   }
-//   next();
-// });
-
-// // Static serve and fallback
-// app.use(express.static("./client/build"));
-// app.get("*", (req, res) => {
-//   res.sendFile(path.resolve("./client/build/index.html"));
-// });
-
-// // const requestLogger = (req, res, next) => {
-// //   console.log(`🌐 REQUEST: ${req.method} ${req.url}`);
-// //   console.log(`🌐 Headers:`, req.headers);
-// //   console.log(`🌐 Body:`, req.body);
-// //   console.log(`🌐 Query:`, req.query);
-// //   console.log(`🌐 Cookies:`, req.cookies);
-// //   console.log('🌐 =====================================');
-// //   next();
-// // };
-
-// // // Add this BEFORE your route definitions in app.js
-// // app.use(requestLogger);
-
-
-
-
-// app.use("/user", userRoutes);
-// app.use("/api", productRoutes);
-// app.use("/api/auth", authRoutes);
-// app.use("/api/stores", storeRoutes);
-// app.use("/api", genProductRoutes)
-
-
-// export default app;
-
-
-
-
-
-
-
 import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
@@ -125,11 +26,7 @@ import webProductRoutes from "./routes/webProduct.routes.js";
 import notificationRoutes from "./routes/notifications.routes.js";
 import settingsRoutes from "./routes/settings.routes.js";
 import subscriptionRoutes from "./routes/subscription.routes.js";
-
-
-
-
-
+import shopifyAuthRoutes from "./controller/shopifyAuth.controller.js";
 
 
 
@@ -163,7 +60,7 @@ app.use("/api/store-users", storeAuthRoutes);
 app.use("/api/community", communityRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/orders", orderRoutes);
-app.use("/api", paymentRoutes); // Payment related routes
+app.use("/api", paymentRoutes); 
 app.use("/api/store-users/manage", storeUsersRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/inventory", inventoryRoutes);
@@ -171,14 +68,7 @@ app.use("/api/web-products", webProductRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/users", settingsRoutes);
 app.use("/api/subscription", subscriptionRoutes);
-
-
-
-
-
-
-
-
+app.use("/auth/shopify", shopifyAuthRoutes);
 
 
 

@@ -24,7 +24,7 @@ export default function InventoryForm({ onCreated }) {
   useEffect(() => {
     (async () => {
       try {
-        const res = await axios.get("https://hivehub-1.onrender.com/api/stores", {
+        const res = await axios.get("http://localhost:8000/api/stores", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setStores(Array.isArray(res.data) ? res.data : res.data.stores || []);
@@ -63,7 +63,7 @@ export default function InventoryForm({ onCreated }) {
   files.forEach((f) => fd.append("media", f));
 
 try {
-  const res = await axios.post("https://hivehub-1.onrender.com/api/inventory", fd, {
+  const res = await axios.post("http://localhost:8000/api/inventory", fd, {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "multipart/form-data",
@@ -77,7 +77,7 @@ try {
 for (const sid of selectedStores) {
   try {
     console.log(`🌐 Fetching WebProducts for store: ${sid}`);
-    const resp = await fetch(`https://hivehub-1.onrender.com/api/web-products/${sid}`, {
+    const resp = await fetch(`http://localhost:8000/api/web-products/${sid}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
