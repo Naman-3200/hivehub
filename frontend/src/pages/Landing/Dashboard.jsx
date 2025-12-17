@@ -84,156 +84,6 @@ const Dashboard = () => {
   const formatCurrency = (val) =>
     `₹${Number(val || 0).toLocaleString("en-IN")}`;
 
-//   return (
-//     <div className="p-6 bg-gray-50 min-h-screen">
-//       <h1 className="text-3xl font-bold text-gray-800 mb-6">📊 Store Dashboard</h1>
-
-//       {/* Filters */}
-//       <div className="flex flex-wrap items-center gap-4 bg-white p-4 rounded-lg shadow mb-8">
-//         <label className="text-gray-700">Store:</label>
-//         <select
-//           name="storeId"
-//           value={filters.storeId}
-//           onChange={handleFilterChange}
-//           className="border rounded-md p-2"
-//         >
-//           <option value="">All Stores</option>
-//           {stores.map((store) => (
-//             <option key={store._id} value={store._id}>
-//               {store.name}
-//             </option>
-//           ))}
-//         </select>
-
-//         <label className="text-gray-700">Start Date:</label>
-//         <input
-//           type="date"
-//           name="start"
-//           value={filters.start}
-//           onChange={handleFilterChange}
-//           className="border rounded-md p-2"
-//         />
-
-//         <label className="text-gray-700">End Date:</label>
-//         <input
-//           type="date"
-//           name="end"
-//           value={filters.end}
-//           onChange={handleFilterChange}
-//           className="border rounded-md p-2"
-//         />
-
-//         <button
-//           onClick={fetchKPIs}
-//           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-//           disabled={loading}
-//         >
-//           {loading ? "Loading..." : "Apply Filters"}
-//         </button>
-//       </div>
-
-//       {/* KPI Metrics */}
-//       {metrics ? (
-//         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-//           <MetricCard title="Total Revenue" value={formatCurrency(metrics.totalRevenue)} />
-//           <MetricCard title="Total Orders" value={metrics.totalOrders || 0} />
-//           <MetricCard title="Avg Order Value" value={formatCurrency(metrics.avgOrderValue)} />
-//           <MetricCard title="New Customers" value={metrics.newCustomers || 0} />
-//           <MetricCard title="Repeat Customers" value={metrics.repeatCustomers || 0} />
-//         </div>
-//       ) : (
-//         <div className="text-gray-500 mb-8">No KPI data available.</div>
-//       )}
-
-//       {/* Line Chart */}
-//       <div className="bg-white p-6 rounded-lg shadow mb-8">
-//         <h2 className="text-lg font-semibold text-gray-800 mb-4">
-//           Orders & Revenue Over Time
-//         </h2>
-//         {timeseries.length > 0 ? (
-//           <ResponsiveContainer width="100%" height={350}>
-//             <LineChart data={timeseries}>
-//               <CartesianGrid strokeDasharray="3 3" />
-//               <XAxis dataKey="date" />
-//               <YAxis yAxisId="left" orientation="left" />
-//               <YAxis yAxisId="right" orientation="right" />
-//               <Tooltip formatter={(value, name) => (name === "Revenue (₹)" ? formatCurrency(value) : value)} />
-//               <Legend />
-//               <Line
-//                 yAxisId="left"
-//                 type="monotone"
-//                 dataKey="orders"
-//                 stroke="#8884d8"
-//                 name="Orders"
-//                 strokeWidth={2}
-//                 dot={false}
-//               />
-//               <Line
-//                 yAxisId="right"
-//                 type="monotone"
-//                 dataKey="revenue"
-//                 stroke="#82ca9d"
-//                 name="Revenue (₹)"
-//                 strokeWidth={2}
-//                 dot={false}
-//               />
-//             </LineChart>
-//           </ResponsiveContainer>
-//         ) : (
-//           <p className="text-gray-500 text-center py-10">
-//             No data available for selected filters.
-//           </p>
-//         )}
-//       </div>
-
-//       {/* Top Stores */}
-//       <div className="bg-white p-6 rounded-lg shadow">
-//         <h2 className="text-lg font-semibold text-gray-800 mb-4">
-//           🏬 Top 10 Stores by Revenue
-//         </h2>
-//         <div className="overflow-x-auto">
-//           <table className="min-w-full border border-gray-200 text-sm">
-//             <thead className="bg-gray-100 text-gray-700">
-//               <tr>
-//                 <th className="p-2 text-left">Store</th>
-//                 <th className="p-2 text-left">Orders</th>
-//                 <th className="p-2 text-left">Revenue (₹)</th>
-//               </tr>
-//             </thead>
-//             <tbody>
-//               {topStores.length > 0 ? (
-//                 topStores.map((store) => (
-//                   <tr key={store.storeId} className="border-t hover:bg-gray-50">
-//                     <td className="p-2">{store.name || "Unknown Store"}</td>
-//                     <td className="p-2">{store.orders}</td>
-//                     <td className="p-2">{formatCurrency(store.revenue)}</td>
-//                   </tr>
-//                 ))
-//               ) : (
-//                 <tr>
-//                   <td colSpan="3" className="text-center p-4 text-gray-500">
-//                     No stores data available.
-//                   </td>
-//                 </tr>
-//               )}
-//             </tbody>
-//           </table>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// // ✅ Reusable KPI card
-// const MetricCard = ({ title, value }) => (
-//   <div className="bg-white p-4 rounded-lg shadow text-center hover:shadow-md transition-shadow">
-//     <h2 className="text-gray-600 text-sm">{title}</h2>
-//     <p className="text-2xl font-bold text-blue-600 mt-1">{value}</p>
-//   </div>
-// );
-
-
-
 
 
 
@@ -378,8 +228,12 @@ return (
         {/* KPI Metrics */}
         {metrics ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-10">
-            <MetricCard title="Total Revenue" value={formatCurrency(metrics.totalRevenue)} />
+            {/* <MetricCard title="Total Revenue" value={formatCurrency(metrics.totalRevenue)} />
             <MetricCard title="Total Orders" value={metrics.totalOrders || 0} />
+            <MetricCard title="Avg Order Value" value={formatCurrency(metrics.avgOrderValue)} /> */}
+            <MetricCard title="Total Revenue" value={formatCurrency(metrics.totalRevenue)} />
+            <MetricCard title="Total Orders" value={metrics.totalOrders} />
+            <MetricCard title="Total Visitors" value={metrics.totalVisitors} />
             <MetricCard title="Avg Order Value" value={formatCurrency(metrics.avgOrderValue)} />
             <MetricCard title="New Customers" value={metrics.newCustomers || 0} />
             <MetricCard title="Repeat Customers" value={metrics.repeatCustomers || 0} />

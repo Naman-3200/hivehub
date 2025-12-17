@@ -10,6 +10,7 @@ import {
   Store,
   Package,
   ClipboardList,
+  Search,
 } from "lucide-react";
 import { AuthContext } from "../../context/authContext.jsx";
 
@@ -33,6 +34,8 @@ export default function DashboardNavbar({ setCurrentView }) {
       { name: "Community", view: "community", icon: Globe },
       { name: "Settings", view: "settings", icon: SettingsIcon },
       { name: "Notifications", view: "notifications", icon: Bell },
+      { name: "Store Analyzer", view: "store-analyzer", icon: Search },
+
     ],
 
     admin: [
@@ -44,6 +47,8 @@ export default function DashboardNavbar({ setCurrentView }) {
       { name: "Community", view: "community", icon: Globe },
       { name: "Settings", view: "settings", icon: SettingsIcon },
       { name: "Notifications", view: "notifications", icon: Bell },
+      { name: "Store Analyzer", view: "store-analyzer", icon: Search },
+
     ],
 
     user: [
@@ -54,6 +59,8 @@ export default function DashboardNavbar({ setCurrentView }) {
       { name: "Community", view: "community", icon: Globe },
       { name: "Settings", view: "settings", icon: SettingsIcon },
       { name: "Notifications", view: "notifications", icon: Bell },
+      { name: "Store Analyzer", view: "store-analyzer", icon: Search },
+
     ],
   };
 

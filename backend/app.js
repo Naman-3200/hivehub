@@ -27,6 +27,8 @@ import notificationRoutes from "./routes/notifications.routes.js";
 import settingsRoutes from "./routes/settings.routes.js";
 import subscriptionRoutes from "./routes/subscription.routes.js";
 import shopifyAuthRoutes from "./controller/shopifyAuth.controller.js";
+import storeAnalyzerRoutes from "./routes/storeAnalyzer.routes.js";
+
 
 
 
@@ -69,6 +71,8 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/users", settingsRoutes);
 app.use("/api/subscription", subscriptionRoutes);
 app.use("/auth/shopify", shopifyAuthRoutes);
+app.use("/api/store-analyzer", storeAnalyzerRoutes);
+
 
 
 

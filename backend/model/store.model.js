@@ -13,6 +13,17 @@ const storeSchema = new mongoose.Schema(
   websiteCss: { type: String },
   publishedProducts: { type: Array, default: [] },
   disabled: { type: Boolean, default: false }, 
+  shopifyShop: {
+    type: String,
+    index: true,
+  },
+  shopifyAccessToken: {
+    type: String,
+  },
+  shopifyConnected: {
+    type: Boolean,
+    default: false,
+  },
 
     createdAt: { type: Date, default: Date.now }
   },

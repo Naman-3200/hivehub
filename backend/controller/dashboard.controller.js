@@ -141,6 +141,10 @@ import Order from "../model/order.model.js";
 import User from "../model/user.model.js";
 import Store from "../model/store.model.js";
 import mongoose from "mongoose";
+import {
+  getOrdersMetrics,
+  getVisitorMetrics
+} from "../services/shopifyMetrics.service.js";
 
 // export const getKPIs = async (req, res) => {
 //   try {
@@ -479,6 +483,55 @@ import mongoose from "mongoose";
 // };
 
 
+export const getDashboardKPIs = async (req, res) => {
+  try {
+    const { start, end, storeId } = req.query;
+
+    const stores = storeId
+      ? await Store.find({ _id: storeId })
+      : await Store.find({ owner: req.user.id });
+
+    let totalRevenue = 0;
+    let totalOrders = 0;
+    let totalVisitors = 0;
+
+    for (const store of stores) {
+      if (!store.shopifyShop || !store.shopifyAccessToken) continue;
+
+      const orders = await getOrdersMetrics(
+        store.shopifyShop,
+        store.shopifyAccessToken,
+        start,
+        end
+      );
+
+      const visitors = await getVisitorMetrics(
+        store.shopifyShop,
+        store.shopifyAccessToken,
+        start,
+        end
+      );
+
+      totalRevenue += orders.totalRevenue;
+      totalOrders += orders.totalOrders;
+      totalVisitors += visitors.visitors;
+    }
+
+    res.json({
+      metrics: {
+        totalRevenue,
+        totalOrders,
+        totalVisitors,
+        avgOrderValue:
+          totalOrders > 0 ? totalRevenue / totalOrders : 0,
+      },
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to load dashboard metrics" });
+  }
+};
 
 
 

@@ -5,6 +5,8 @@ import { generateWebsiteContent } from "../generateWebsiteContent.jsx";
 import Dashboard from "./Dashboard.jsx"; // adjust path if needed
 import { createWhopCheckout } from '../../utils/subscriptionService.js';
 import StoresPage from '../StoresPage.jsx';
+import StoreAnalyzer from "../StoreAnalyzer.jsx";
+
 
 
 
@@ -1719,6 +1721,9 @@ return (
           setCurrentView={setCurrentView}
         />
       )}
+
+      {currentView === "store-analyzer" && <StoreAnalyzer />}
+
 
       {/* {currentView === "create-store" && (
         <CreateStorePage
