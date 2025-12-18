@@ -190,7 +190,7 @@ router.get("/install", async (req, res) => {
 //       );
 
 //       return res.redirect(
-//         "https://3594d1624de3.ngrok-free.app?view=store-analyzer&installed=true"
+//         "https://hivehub-tr8u.vercel.app?view=store-analyzer&installed=true"
 //       );
 //     }
 
@@ -214,7 +214,7 @@ router.get("/install", async (req, res) => {
 
 //     // Redirect back to frontend
 //     return res.redirect(
-//       `https://3594d1624de3.ngrok-free.app/shopify-connected?shop=${encodeURIComponent(
+//       `https://hivehub-tr8u.vercel.app/shopify-connected?shop=${encodeURIComponent(
 //         shop
 //       )}&storeId=${hiveStoreId}`
 //     );
@@ -298,7 +298,7 @@ router.get("/callback", async (req, res) => {
        Redirect back to frontend
     ============================== */
     return res.redirect(
-      `https://3594d1624de3.ngrok-free.app?view=store-analyzer&storeId=693f92ceac9dd288bab3f29d&installed=true`
+      `https://hivehub-tr8u.vercel.app?view=store-analyzer&storeId=693f92ceac9dd288bab3f29d&installed=true`
     );
 
   } catch (err) {

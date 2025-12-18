@@ -37,7 +37,7 @@ import crypto from "crypto";
 //     if (!store.shopifyAccessToken || store.shopifyShop !== shop) {
 //       return res.status(403).json({
 //         requiresInstall: true,
-//         installUrl: `https://3594d1624de3.ngrok-free.app/auth/shopify/install?shop=${shop}&hiveStoreId=${hiveStoreId}`,
+//         installUrl: `https://hivehub-tr8u.vercel.app/auth/shopify/install?shop=${shop}&hiveStoreId=${hiveStoreId}`,
 //       });
 //     }
 
@@ -99,7 +99,7 @@ export const analyzeStore = async (req, res) => {
     if (!store || !store.shopifyAccessToken) {
       return res.status(403).json({
         requiresInstall: true,
-        installUrl: `https://3594d1624de3.ngrok-free.app/auth/shopify/install?shop=${shop}`,
+        installUrl: `https://hivehub-tr8u.vercel.app/auth/shopify/install?shop=${shop}`,
       });
     }
 
