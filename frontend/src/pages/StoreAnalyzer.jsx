@@ -14,7 +14,7 @@
 
 //   useEffect(() => {
 //     axios
-//       .get("http://localhost:8000/api/stores", {
+//       .get("https://hivehub-1.onrender.com/api/stores", {
 //         headers: { Authorization: `Bearer ${token}` },
 //       })
 //       .then((res) => setStores(res.data.stores || res.data))
@@ -33,7 +33,7 @@
 //     setAnalysis(null);
 
 //     const res = await axios.post(
-//       "http://localhost:8000/api/store-analyzer/analyze",
+//       "https://hivehub-1.onrender.com/api/store-analyzer/analyze",
 //       {
 //         storeUrl,
 //         hiveStoreId: selectedStoreId,
@@ -185,7 +185,7 @@ const StoreAnalyzer = () => {
       setAnalysis(null);
 
       const res = await axios.post(
-        "http://localhost:8000/api/store-analyzer/analyze",
+        "https://hivehub-1.onrender.com/api/store-analyzer/analyze",
         { storeUrl },
         {
           headers: { Authorization: `Bearer ${token}` },
