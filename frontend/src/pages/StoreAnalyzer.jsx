@@ -418,11 +418,11 @@ const handleImportToShopify = (product) => {
                     className="border-b hover:bg-gray-50 transition"
                   >
                     <td className="p-4 flex items-center gap-3">
-                      <img
+                      {/* <img
                         src={p.image}
                         alt={p.name}
                         className="w-12 h-12 rounded border"
-                      />
+                      /> */}
                       <div>
                         <p className="font-medium">{p.name}</p>
                         <p className="text-blue-600 text-xs">{p.domain}</p>
