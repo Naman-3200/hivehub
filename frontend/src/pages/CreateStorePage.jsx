@@ -315,12 +315,22 @@ const CreateStorePage = ({
         return;
       }
 
-      const res = await fetch(
-        `https://hivehub-1.onrender.com/auth/shopify/install?shop=${shopifyDomain}&hiveStoreId=${createdStoreId}`
-      );
+      // const res = await fetch(
+      //   `https://hivehub-1.onrender.com/auth/shopify/install?shop=${shopifyDomain}&hiveStoreId=${createdStoreId}`
+      // );
 
-      const data = await res.json();
-      window.location.href = data.installUrl;
+      // const data = await res.json();
+      // window.location.href = data.installUrl;
+
+
+        const installUrl =
+    `https://hivehub-1.onrender.com/auth/shopify/install` +
+    `?shop=${encodeURIComponent(shopifyDomain)}` +
+    `&hiveStoreId=${createdStoreId}`;
+
+  // 🔥 MUST be a browser redirect (not fetch)
+  window.location.assign(installUrl);
+
 
     } catch (error) {
       console.error("Shopify connect failed:", error);
