@@ -313,6 +313,14 @@ const StoreAnalyzer = () => {
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [error, setError] = useState("");
+  const [openMenuId, setOpenMenuId] = useState(null);
+
+const handleImportToShopify = (product) => {
+  console.log("Importing product to Shopify:", product);
+  alert(`Import "${product.name}" to Shopify (API hookup pending)`);
+  setOpenMenuId(null);
+};
+
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -398,6 +406,8 @@ const StoreAnalyzer = () => {
                   <th className="p-4 text-left">Store Info</th>
                   <th className="p-4 text-left">Category</th>
                   <th className="p-4 text-left">Product Creation</th>
+                  <th className="p-4 text-right">Actions</th> 
+
                 </tr>
               </thead>
 
@@ -439,6 +449,29 @@ const StoreAnalyzer = () => {
                     <td className="p-4 text-gray-600">
                       {p.createdAt}
                     </td>
+
+                    {/* ACTION MENU */}
+      <td className="p-4 text-right relative">
+        <button
+          onClick={() =>
+            setOpenMenuId(openMenuId === p.id ? null : p.id)
+          }
+          className="px-2 py-1 rounded hover:bg-gray-200"
+        >
+          ⋮
+        </button>
+
+        {openMenuId === p.id && (
+          <div className="absolute right-4 top-10 z-50 bg-white border rounded-lg shadow-lg w-40">
+            <button
+              onClick={() => handleImportToShopify(p)}
+              className="block w-full text-left px-4 py-2 text-sm hover:bg-indigo-50 hover:text-indigo-600"
+            >
+              Import to Shopify
+            </button>
+          </div>
+        )}
+      </td>
                   </tr>
                 ))}
               </tbody>
