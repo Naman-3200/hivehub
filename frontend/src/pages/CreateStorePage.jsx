@@ -325,7 +325,7 @@ const CreateStorePage = ({
 
         const installUrl =
     `https://hivehub-1.onrender.com/auth/shopify/install` +
-    `?shop=${encodeURIComponent(shopifyDomain)}` +
+    `?shop=${shopifyDomain}` +
     `&hiveStoreId=${createdStoreId}`;
 
   // 🔥 MUST be a browser redirect (not fetch)
