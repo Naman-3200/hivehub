@@ -6,15 +6,31 @@ const asyncHandler = require('../utils/asyncHandler')
 const MIN_ORDER_AMOUNT = 99
 const DEFAULT_DELIVERY_CHARGE = 40
 const DEFAULT_FREE_DELIVERY_THRESHOLD = 499
+const DEFAULT_BUSINESS_RADIUS = 10
+// Store location: Charni Road, Mumbai
+const STORE_LAT = 18.9543
+const STORE_LNG = 72.8197
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2)
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
 
 async function getDeliverySettings() {
-  const settings = await Settings.find({ key: { $in: ['deliveryCharge', 'freeDeliveryThreshold', 'freeDeliveryEnabled'] } }).lean()
+  const settings = await Settings.find({ key: { $in: ['deliveryCharge', 'freeDeliveryThreshold', 'freeDeliveryEnabled', 'businessRadius'] } }).lean()
   const map = {}
   for (const s of settings) map[s.key] = s.value
   return {
     deliveryCharge: map.deliveryCharge ?? DEFAULT_DELIVERY_CHARGE,
     freeDeliveryThreshold: map.freeDeliveryThreshold ?? DEFAULT_FREE_DELIVERY_THRESHOLD,
     freeDeliveryEnabled: map.freeDeliveryEnabled ?? true,
+    businessRadius: map.businessRadius ?? DEFAULT_BUSINESS_RADIUS,
   }
 }
 
@@ -49,8 +65,18 @@ const createOrder = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: `Minimum order amount is ₹${MIN_ORDER_AMOUNT}` })
   }
 
-  const { deliveryCharge: DC, freeDeliveryThreshold: FDT, freeDeliveryEnabled } = await getDeliverySettings()
+  const { deliveryCharge: DC, freeDeliveryThreshold: FDT, freeDeliveryEnabled, businessRadius } = await getDeliverySettings()
   const deliveryCharge = !freeDeliveryEnabled || validSubtotal >= FDT ? 0 : DC
+
+  // Radius check — only when customer provides coordinates
+  if (deliveryAddress?.lat != null && deliveryAddress?.lng != null) {
+    const dist = haversineKm(STORE_LAT, STORE_LNG, Number(deliveryAddress.lat), Number(deliveryAddress.lng))
+    if (dist > businessRadius) {
+      return res.status(400).json({
+        message: `Service not available in your area. We deliver within ${businessRadius} km of our store. Your address is ${dist.toFixed(1)} km away.`,
+      })
+    }
+  }
 
   const validCouponDiscount = Number(couponDiscount) || 0
   const validWalletUsed = Number(walletAmountUsed) || 0
@@ -252,19 +278,16 @@ const getOrderInvoice = asyncHandler(async (req, res) => {
   const itemRows = order.items
     .map((item) => {
       const hsnCode = item.productId?.hsnCode || ''
-      const gstRate = item.productId?.gstRate || 0
+      const mrp = item.mrp != null ? Number(item.mrp) : Number(item.price)
       const lineTotal = item.price * item.quantity
-      const taxableBase = gstRate > 0 ? parseFloat((lineTotal * 100 / (100 + gstRate)).toFixed(2)) : lineTotal
-      const gstAmount = gstRate > 0 ? parseFloat((lineTotal - taxableBase).toFixed(2)) : 0
       return `
     <tr>
       <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${item.name}${hsnCode ? `<br/><span style="font-size:10px;color:#94a3b8">HSN: ${hsnCode}</span>` : ''}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:center">${item.unit || '-'}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:center">${item.quantity}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right">₹${mrp.toFixed(2)}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right">₹${Number(item.price).toFixed(2)}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right">₹${lineTotal.toFixed(2)}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right">${gstRate > 0 ? `${gstRate}%` : 'Nil'}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right">${gstAmount > 0 ? `₹${gstAmount.toFixed(2)}` : '—'}</td>
     </tr>`
     })
     .join('')
@@ -354,10 +377,9 @@ const getOrderInvoice = asyncHandler(async (req, res) => {
       <th>Item</th>
       <th>Unit</th>
       <th style="text-align:center">Qty</th>
+      <th style="text-align:right">MRP</th>
       <th style="text-align:right">Rate</th>
       <th style="text-align:right">Amount</th>
-      <th style="text-align:right">GST %</th>
-      <th style="text-align:right">GST (incl.)</th>
     </tr>
   </thead>
   <tbody>${itemRows}</tbody>
@@ -490,6 +512,22 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
   }
 
   await order.save()
+
+  // Credit delivery earnings to partner wallet when delivered
+  if (orderStatus === 'delivered' && order.assignedDeliveryPartner && order.deliveryEarnings > 0) {
+    await User.findByIdAndUpdate(order.assignedDeliveryPartner, {
+      $inc: { 'wallet.balance': order.deliveryEarnings },
+      $push: {
+        'wallet.transactions': {
+          type: 'credit',
+          amount: order.deliveryEarnings,
+          description: `Delivery earnings for order ${order.orderNumber}`,
+          orderId: order._id,
+        },
+      },
+    })
+  }
+
   res.json({ message: 'Order status updated', order })
 })
 

@@ -7,12 +7,28 @@ import { API_PATHS, buildApiUrl } from '../../config/apiEndpoints'
 
 const MIN_ORDER = 99
 
+// Store location: Charni Road, Mumbai
+const STORE_LAT = 18.9543
+const STORE_LNG = 72.8197
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2)
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
 // ─── Embedded Location Picker Map ─────────────────────────────────────────────
 
-function LocationPickerMap({ onLocationSelect }) {
+function LocationPickerMap({ onLocationSelect, businessRadius }) {
   const mapContainerRef = useRef(null)
   const mapRef = useRef(null)
   const markerRef = useRef(null)
+  const radiusCircleRef = useRef(null)
   const [leafletReady, setLeafletReady] = useState(false)
   const [gettingLocation, setGettingLocation] = useState(false)
 
@@ -35,17 +51,36 @@ function LocationPickerMap({ onLocationSelect }) {
   useEffect(() => {
     if (!leafletReady || !mapContainerRef.current || mapRef.current) return
     const L = window.L
-    const defaultLat = 19.076, defaultLng = 72.8777
-    const map = L.map(mapContainerRef.current).setView([defaultLat, defaultLng], 13)
+    const map = L.map(mapContainerRef.current).setView([STORE_LAT, STORE_LNG], 13)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       maxZoom: 19,
     }).addTo(map)
-    const icon = L.divIcon({
+
+    // Store pin
+    const storeIcon = L.divIcon({
+      html: '<div style="width:22px;height:22px;background:#dc2626;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:11px;">🏪</div>',
+      iconSize: [22, 22], iconAnchor: [11, 11], className: '',
+    })
+    L.marker([STORE_LAT, STORE_LNG], { icon: storeIcon }).addTo(map).bindPopup('Shubham Supermarket')
+
+    // Delivery radius circle
+    const radius = (businessRadius || 10) * 1000
+    radiusCircleRef.current = L.circle([STORE_LAT, STORE_LNG], {
+      radius,
+      color: '#059669',
+      fillColor: '#059669',
+      fillOpacity: 0.08,
+      weight: 2,
+      dashArray: '6 4',
+    }).addTo(map)
+
+    // Customer delivery marker
+    const delivIcon = L.divIcon({
       html: '<div style="width:28px;height:28px;background:#059669;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>',
       iconSize: [28, 28], iconAnchor: [14, 28], className: '',
     })
-    const marker = L.marker([defaultLat, defaultLng], { draggable: true, icon }).addTo(map)
+    const marker = L.marker([STORE_LAT, STORE_LNG], { draggable: true, icon: delivIcon }).addTo(map)
     marker.on('dragend', async (e) => {
       const { lat, lng } = e.target.getLatLng()
       await reverseGeocode(lat, lng)
@@ -59,6 +94,13 @@ function LocationPickerMap({ onLocationSelect }) {
     markerRef.current = marker
   }, [leafletReady])
 
+  // Update radius circle when businessRadius changes
+  useEffect(() => {
+    if (radiusCircleRef.current && businessRadius) {
+      radiusCircleRef.current.setRadius(businessRadius * 1000)
+    }
+  }, [businessRadius])
+
   const reverseGeocode = async (lat, lng) => {
     try {
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`)
@@ -71,6 +113,8 @@ function LocationPickerMap({ onLocationSelect }) {
           city: a.city || a.town || a.village || a.county || '',
           state: a.state || '',
           pincode: a.postcode || '',
+          lat,
+          lng,
         })
       }
     } catch (_) {}
@@ -105,8 +149,10 @@ function LocationPickerMap({ onLocationSelect }) {
           <span className="h-5 w-5 animate-spin rounded-full border-2 border-gray-400 border-t-transparent mr-2" /> Loading map…
         </div>
       )}
-      <div ref={mapContainerRef} style={{ height: '280px', borderRadius: '12px', display: leafletReady ? 'block' : 'none', zIndex: 0 }} />
-      <p className="text-xs text-gray-500">Click on the map or drag the pin to set your delivery location. Fields will auto-fill.</p>
+      <div ref={mapContainerRef} style={{ height: '320px', borderRadius: '12px', display: leafletReady ? 'block' : 'none', zIndex: 0 }} />
+      <p className="text-xs text-gray-500">
+        The red pin is our store. The green circle shows the delivery zone ({businessRadius || 10} km radius). Click anywhere inside to set your delivery location.
+      </p>
     </div>
   )
 }
@@ -227,9 +273,11 @@ function CheckoutPage() {
   const [placing, setPlacing] = useState(false)
   const [error, setError] = useState('')
   const [formErrors, setFormErrors] = useState({})
-  const [deliverySettings, setDeliverySettings] = useState({ deliveryCharge: 40, freeDeliveryThreshold: 499, freeDeliveryEnabled: true })
+  const [deliverySettings, setDeliverySettings] = useState({ deliveryCharge: 40, freeDeliveryThreshold: 499, freeDeliveryEnabled: true, businessRadius: 10 })
 
   const [form, setForm] = useState({ fullName: '', phone: '', addressLine: '', city: '', state: '', pincode: '', label: 'home' })
+  const [mapCoords, setMapCoords] = useState(null) // { lat, lng } from map picker
+  const [radiusError, setRadiusError] = useState('')
 
   useEffect(() => {
     const storedUser = localStorage.getItem('authUser')
@@ -267,6 +315,7 @@ function CheckoutPage() {
         deliveryCharge: d.deliveryCharge ?? 40,
         freeDeliveryThreshold: d.freeDeliveryThreshold ?? 499,
         freeDeliveryEnabled: d.freeDeliveryEnabled !== false,
+        businessRadius: d.businessRadius ?? 10,
       }))
       .catch(() => {})
   }, [])
@@ -319,6 +368,8 @@ function CheckoutPage() {
         city: selectedAddress.city,
         state: selectedAddress.state,
         pincode: selectedAddress.pincode,
+        lat: selectedAddress.lat ?? null,
+        lng: selectedAddress.lng ?? null,
       }
     }
     return {
@@ -328,6 +379,8 @@ function CheckoutPage() {
       city: form.city.trim(),
       state: form.state.trim(),
       pincode: form.pincode.trim(),
+      lat: mapCoords?.lat ?? null,
+      lng: mapCoords?.lng ?? null,
     }
   }
 
@@ -341,7 +394,7 @@ function CheckoutPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          items: cartItems.map((i) => ({ productId: i._id, name: i.name, price: getEffectivePrice(i), quantity: Number(i.quantity || 1), thumbnail: i.thumbnail || '', unit: i.unit || '' })),
+          items: cartItems.map((i) => ({ productId: i._id, name: i.name, mrp: Number(i.price || 0), price: getEffectivePrice(i), quantity: Number(i.quantity || 1), thumbnail: i.thumbnail || '', unit: i.unit || '' })),
           deliveryAddress: getDeliveryAddress(),
           paymentMethod: paymentMethod === 'razorpay' ? 'razorpay' : paymentMethod,
           subtotal,
@@ -364,6 +417,16 @@ function CheckoutPage() {
   }
 
   const handleProceed = () => {
+    setRadiusError('')
+    // Validate delivery radius when coordinates are available
+    const addr = getDeliveryAddress()
+    if (addr.lat != null && addr.lng != null) {
+      const dist = haversineKm(STORE_LAT, STORE_LNG, addr.lat, addr.lng)
+      if (dist > (deliverySettings.businessRadius || 10)) {
+        setRadiusError(`Service not available in your area. We deliver within ${deliverySettings.businessRadius || 10} km. Your location is ${dist.toFixed(1)} km from our store.`)
+        return
+      }
+    }
     if (!selectedAddress) {
       const errs = validateForm()
       if (Object.keys(errs).length > 0) { setFormErrors(errs); return }
@@ -402,6 +465,7 @@ function CheckoutPage() {
         <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Checkout</h1>
 
         {error && <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
+        {radiusError && !showMap && <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">⚠️ {radiusError}</div>}
 
         <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_360px]">
           <div className="space-y-5">
@@ -443,6 +507,7 @@ function CheckoutPage() {
                   </div>
                   {showMap && (
                     <LocationPickerMap
+                      businessRadius={deliverySettings.businessRadius}
                       onLocationSelect={(loc) => {
                         setForm((p) => ({
                           ...p,
@@ -451,9 +516,24 @@ function CheckoutPage() {
                           state: loc.state || p.state,
                           pincode: loc.pincode || p.pincode,
                         }))
+                        setMapCoords(loc.lat != null ? { lat: loc.lat, lng: loc.lng } : null)
+                        // Inline radius feedback
+                        if (loc.lat != null) {
+                          const dist = haversineKm(STORE_LAT, STORE_LNG, loc.lat, loc.lng)
+                          if (dist > (deliverySettings.businessRadius || 10)) {
+                            setRadiusError(`This location is ${dist.toFixed(1)} km from our store. We only deliver within ${deliverySettings.businessRadius || 10} km.`)
+                          } else {
+                            setRadiusError('')
+                          }
+                        }
                         setFormErrors({})
                       }}
                     />
+                  )}
+                  {radiusError && (
+                    <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+                      Service not available — {radiusError}
+                    </div>
                   )}
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>

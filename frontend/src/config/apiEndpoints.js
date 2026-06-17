@@ -67,6 +67,7 @@ const API_PATHS = {
   delivery: {
     analytics: '/api/delivery/analytics',
     availability: '/api/delivery/availability',
+    partnerDetails: '/api/delivery/partner/:id',
   },
   settings: {
     get: '/api/settings',

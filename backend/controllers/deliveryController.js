@@ -2,7 +2,7 @@ const Order = require('../models/Order')
 const User = require('../models/User')
 const asyncHandler = require('../utils/asyncHandler')
 
-const DELIVERY_FEE = 30 // ₹30 flat rate per delivered order
+const sumEarnings = (orders) => orders.reduce((sum, o) => sum + (o.deliveryEarnings || 0), 0)
 
 const getDeliveryAnalytics = asyncHandler(async (req, res) => {
   const deliveryPartnerId = req.user._id
@@ -33,15 +33,15 @@ const getDeliveryAnalytics = asyncHandler(async (req, res) => {
     day.setHours(0, 0, 0, 0)
     const dayEnd = new Date(day)
     dayEnd.setDate(day.getDate() + 1)
-    const count = deliveredOrders.filter((o) => {
+    const dayOrders = deliveredOrders.filter((o) => {
       const d = new Date(o.updatedAt)
       return d >= day && d < dayEnd
-    }).length
+    })
     weeklyStats.push({
       day: day.toLocaleDateString('en-IN', { weekday: 'short' }),
       date: day.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }),
-      count,
-      earnings: count * DELIVERY_FEE,
+      count: dayOrders.length,
+      earnings: sumEarnings(dayOrders),
     })
   }
 
@@ -49,7 +49,7 @@ const getDeliveryAnalytics = asyncHandler(async (req, res) => {
   const recentEarnings = deliveredOrders.slice(0, 10).map((o) => ({
     orderId: o._id,
     orderNumber: o.orderNumber,
-    amount: DELIVERY_FEE,
+    amount: o.deliveryEarnings || 0,
     date: o.updatedAt,
     customerName: o.deliveryAddress?.fullName || '',
   }))
@@ -61,15 +61,14 @@ const getDeliveryAnalytics = asyncHandler(async (req, res) => {
       totalFailed: failedOrders.length,
       activeOrders: activeOrders.length,
       todayDelivered: todayDelivered.length,
-      todayEarnings: todayDelivered.length * DELIVERY_FEE,
+      todayEarnings: sumEarnings(todayDelivered),
       weekDelivered: weekDelivered.length,
-      weekEarnings: weekDelivered.length * DELIVERY_FEE,
+      weekEarnings: sumEarnings(weekDelivered),
       monthDelivered: monthDelivered.length,
-      monthEarnings: monthDelivered.length * DELIVERY_FEE,
-      totalEarnings: deliveredOrders.length * DELIVERY_FEE,
+      monthEarnings: sumEarnings(monthDelivered),
+      totalEarnings: sumEarnings(deliveredOrders),
       weeklyStats,
       recentEarnings,
-      deliveryFeePerOrder: DELIVERY_FEE,
       deliveryStatus: req.user.deliveryStatus,
       shiftStart: req.user.shiftStart,
       shiftEnd: req.user.shiftEnd,
@@ -99,4 +98,31 @@ const updateAvailability = asyncHandler(async (req, res) => {
   })
 })
 
-module.exports = { getDeliveryAnalytics, updateAvailability }
+const getPartnerDetails = asyncHandler(async (req, res) => {
+  const partner = await User.findOne({ _id: req.params.id, role: 'delivery' })
+    .select('-password')
+    .lean()
+  if (!partner) return res.status(404).json({ message: 'Delivery partner not found' })
+
+  const orders = await Order.find({ assignedDeliveryPartner: req.params.id })
+    .sort({ updatedAt: -1 })
+    .lean()
+
+  const deliveredOrders = orders.filter((o) => o.orderStatus === 'delivered')
+  const activeOrders = orders.filter((o) => ['confirmed', 'processing', 'shipped', 'out_for_delivery'].includes(o.orderStatus))
+
+  res.json({
+    partner,
+    stats: {
+      totalOrders: orders.length,
+      deliveredOrders: deliveredOrders.length,
+      activeOrders: activeOrders.length,
+      totalEarnings: sumEarnings(deliveredOrders),
+      walletBalance: partner.wallet?.balance || 0,
+      walletTransactions: (partner.wallet?.transactions || []).slice(0, 20),
+    },
+    recentOrders: orders.slice(0, 20),
+  })
+})
+
+module.exports = { getDeliveryAnalytics, updateAvailability, getPartnerDetails }

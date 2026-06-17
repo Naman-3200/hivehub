@@ -4,6 +4,7 @@ const orderItemSchema = new mongoose.Schema(
   {
     productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
     name: { type: String, required: true },
+    mrp: { type: Number, default: null },
     price: { type: Number, required: true },
     quantity: { type: Number, required: true, min: 1 },
     thumbnail: { type: String, default: '' },
@@ -20,6 +21,8 @@ const deliveryAddressSchema = new mongoose.Schema(
     city: { type: String, required: true, trim: true },
     state: { type: String, required: true, trim: true },
     pincode: { type: String, required: true, trim: true },
+    lat: { type: Number, default: null },
+    lng: { type: Number, default: null },
   },
   { _id: false },
 )
