@@ -1,0 +1,167 @@
+import React from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { registerSchema } from "../validation/registerSchema";
+import api from "../lib/api";
+
+export default function Register() {
+  const navigate = useNavigate();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({ resolver: zodResolver(registerSchema) });
+
+  async function onSubmit(data) {
+    try {
+      // Send OTP instead of direct registration
+      const response = await api.post("/api/auth/send-otp", {
+        email: data.email,
+        name: data.name,
+      });
+      console.log(response);
+      if (response.data.success) {
+        // Navigate to OTP verification with user data
+        navigate("/verify-otp", {
+          state: {
+            email: data.email,
+            name: data.name,
+            password: data.password,
+          },
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err?.response?.data?.message || "Registration failed");
+    }
+  }
+
+  const handleGoogleSignup = () => {
+    window.location.href = `${
+      import.meta.env.VITE_API_URL || "https://hivehub-1.onrender.com"
+    }/api/auth/google`;
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-full max-w-md bg-white shadow-lg rounded-2xl p-8">
+        {/* Logo */}
+        <div className="flex justify-center mb-6">
+          <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
+            <span>⧉</span>
+          </div>
+        </div>
+
+        {/* Title + subtitle */}
+        <h2 className="text-center text-xl font-semibold text-gray-900">
+          Create your account
+        </h2>
+        <p className="mt-1 text-center text-sm text-gray-500">
+          Get started with Hive Hub in a minute.
+        </p>
+
+        {/* Google Signup Button */}
+        <div className="mt-6 flex gap-3">
+          <button
+            onClick={handleGoogleSignup}
+            type="button"
+            className="w-full flex items-center justify-center border border-gray-300 rounded-md py-2 hover:bg-gray-50 transition-colors"
+          >
+            <img
+              src="https://www.svgrepo.com/show/355037/google.svg"
+              alt="Google"
+              className="w-5 h-5 mr-2"
+            />
+            Continue with Google
+          </button>
+        </div>
+
+        {/* Divider */}
+        <div className="flex items-center my-6">
+          <div className="flex-grow h-px bg-gray-300" />
+          <span className="px-3 text-sm text-gray-500">
+            or sign up with email
+          </span>
+          <div className="flex-grow h-px bg-gray-300" />
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div>
+            <input
+              {...register("name")}
+              type="text"
+              placeholder="Full Name"
+              className="block w-full rounded-md border border-gray-300 p-2 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+            />
+            {errors.name && (
+              <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+            )}
+          </div>
+
+          <div>
+            <input
+              {...register("email")}
+              type="email"
+              placeholder="Email Address"
+              className="block w-full rounded-md border border-gray-300 p-2 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+            />
+            {errors.email && (
+              <p className="mt-1 text-sm text-red-600">
+                {errors.email.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <input
+              {...register("password")}
+              type="password"
+              placeholder="Password"
+              className="block w-full rounded-md border border-gray-300 p-2 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+            />
+            {errors.password && (
+              <p className="mt-1 text-sm text-red-600">
+                {errors.password.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <input
+              {...register("confirmPassword")}
+              type="password"
+              placeholder="Confirm Password"
+              className="block w-full rounded-md border border-gray-300 p-2 text-gray-900 focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+            />
+            {errors.confirmPassword && (
+              <p className="mt-1 text-sm text-red-600">
+                {errors.confirmPassword.message}
+              </p>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition disabled:opacity-60"
+          >
+            {isSubmitting ? "Sending verification..." : "Continue with Email"}
+          </button>
+        </form>
+
+        {/* Footer links */}
+        <div className="mt-4 text-center">
+          <p className="text-sm text-gray-600">
+            Already have an account?{" "}
+            <Link to="/login" className="text-blue-600 hover:underline">
+              Sign in
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
